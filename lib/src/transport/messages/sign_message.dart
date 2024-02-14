@@ -37,6 +37,8 @@ enum SignType {
   ethSignTypedDataV3,
   ethSignTypedDataV4;
 
+  bool get isTransaction => this == SignType.legacyTransaction || this == SignType.ethTransaction;
+
   @override
   String toString() => switch (this) {
         SignType.legacyTransaction => 'legacy_transaction',

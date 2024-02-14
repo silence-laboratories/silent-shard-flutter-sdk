@@ -29,8 +29,9 @@ final class SignRequest {
   final String readableMessage;
   final DateTime createdAt;
   final String? messageHash;
+  final int? chainId;
 
-  SignRequest._fromMessage(this._originalMessage, this.pairingId, this.to, this.value, this.readableMessage, this.messageHash)
+  SignRequest._fromMessage(this._originalMessage, this.pairingId, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
       : accountId = _originalMessage.accountId,
         signType = _originalMessage.signMetadata,
         hashAlg = _originalMessage.hashAlg,
@@ -138,31 +139,31 @@ class SignListener {
     switch (message.signMetadata) {
       case SignType.legacyTransaction:
         {
-          final (to, value) = _parseTransaction(message.messageToSign, true);
+          final (to, value, chainId) = _parseTransaction(message.messageToSign, true);
           final readableMessage = to == null || value == null ? "Cannot decode transaction" : "Ethereum transaction";
-          return SignRequest._fromMessage(message, _pairingData.pairingId, to, value, readableMessage, null);
+          return SignRequest._fromMessage(message, _pairingData.pairingId, to, value, readableMessage, null, chainId);
         }
       case SignType.ethTransaction:
         {
-          final (to, value) = _parseTransaction(message.messageToSign, false);
+          final (to, value, chainId) = _parseTransaction(message.messageToSign, false);
           final messageHash = _ethTransactionHash(message.messageToSign, message.hashAlg);
           final readableMessage = to == null || value == null ? "Cannot decode transaction" : "Ethereum transaction";
-          return SignRequest._fromMessage(message, _pairingData.pairingId, to, value, readableMessage, messageHash);
+          return SignRequest._fromMessage(message, _pairingData.pairingId, to, value, readableMessage, messageHash, chainId);
         }
 
       case SignType.ethSign:
         {
           final messageHash = _ethTransactionHash(message.messageToSign, message.hashAlg);
-          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, messageHash);
+          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, messageHash, null);
         }
       case SignType.personalSign:
         {
           final messageHash = _personalSignHash(message.messageToSign, message.hashAlg);
-          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, messageHash);
+          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, messageHash, null);
         }
 
       default:
-        return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, null);
+        return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, null, null);
     }
   }
 
@@ -184,21 +185,23 @@ class SignListener {
     return hash.hex();
   }
 
-  (String?, BigInt?) _parseTransaction(String transaction, bool isLegacyTransaction) {
+  (String?, BigInt?, int?) _parseTransaction(String transaction, bool isLegacyTransaction) {
     if (isLegacyTransaction) {
       final bytes = Uint8List.fromList(hex.decode(transaction));
       final parsed = decode(bytes);
-      if (parsed is! List || parsed.length < 7 || parsed[5] is! List || parsed[6] is! List) return (null, null);
+      if (parsed is! List || parsed.length < 7 || parsed[3] is! List || parsed[4] is! List || parsed[6] is! List) return (null, null, null);
       final to = hex.encode(parsed[3]);
       final value = decodeBigInt(parsed[4]);
-      return ('0x$to', value);
+      final chainId = int.parse(hex.encode(parsed[6]), radix: 16);
+      return ('0x$to', value, chainId);
     } else {
       final bytes = Uint8List.fromList(hex.decode(transaction.substring(2)));
       final parsed = decode(bytes);
-      if (parsed is! List || parsed.length < 7 || parsed[5] is! List || parsed[6] is! List) return (null, null);
+      if (parsed is! List || parsed.length < 7 || parsed[5] is! List || parsed[6] is! List || parsed[0] is! List) return (null, null, null);
       final to = hex.encode(parsed[5]);
+      final chainId = decodeBigInt(parsed[0]).toInt();
       final value = decodeBigInt(parsed[6]);
-      return ('0x$to', value);
+      return ('0x$to', value, chainId);
     }
   }
 }
