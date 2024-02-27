@@ -45,8 +45,10 @@ class PairingAction {
     await _sharedDatabase.setPairingMessage(pairingMessage);
     if (_isCancelled) return Completer<Never>().future;
 
-    _streamSubscription =
-        _sharedDatabase.pairingUpdates(pairingMessage.pairingId).timeout(const Duration(milliseconds: expirationInMs)).listen(_handleResponse, onError: _handleError, cancelOnError: true);
+    _streamSubscription = _sharedDatabase
+        .pairingUpdates(pairingMessage.pairingId)
+        .timeout(const Duration(milliseconds: expirationInMs))
+        .listen(_handleResponse, onError: _handleError, cancelOnError: true);
 
     return _completer.future;
   }
@@ -62,7 +64,7 @@ class PairingAction {
     _streamSubscription?.cancel();
 
     if (response.isPaired == false) {
-      _handleError(StateError('Something went wrong'));
+      _handleError(StateError(response.pairingFailureReason ?? 'Something went wrong'));
       return;
     }
 
