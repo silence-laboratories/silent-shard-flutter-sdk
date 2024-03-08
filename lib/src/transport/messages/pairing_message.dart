@@ -37,11 +37,11 @@ final class PairingMessage {
 
 final class PairingResponse {
   final bool? isPaired;
-  final String? pairingFailureReason;
+  final String? pairingRemark;
   final bool isBackedUpDataUsed;
 
   PairingResponse.fromJson(Map<String, dynamic> json)
       : isPaired = json['isPaired'] as bool?,
-        pairingFailureReason = json['pairingFailureReason'] as String?,
+        pairingRemark = json['pairingRemark'] as String?,
         isBackedUpDataUsed = (json['isBackedUpDataUsed'] is bool) ? json['isBackedUpDataUsed'] : false;
 }
