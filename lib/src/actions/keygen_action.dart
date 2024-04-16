@@ -62,9 +62,9 @@ class KeygenAction {
   void _handleMessage(KeygenMessage message) {
     if (message.payload.party != 1 || message.payload.round != _expectedRound) return; // ignore own messages and incorrect rounds
 
-    final validationError = _validateMessage(message);
-    if (validationError != null) {
-      return _completeWithError(validationError);
+    final validationResponse = _validateMessage(message);
+    if (!validationResponse) {
+      return;
     }
 
     var (decryptionError, decrypted) = _decryptPayload(message.payload);
@@ -97,16 +97,16 @@ class KeygenAction {
     _completer.completeError(error);
   }
 
-  Error? _validateMessage(KeygenMessage message) {
+  bool _validateMessage(KeygenMessage message) {
     final now = DateTime.now();
 
     // if (now.isAfter(message.createdAt)) {
     //   return StateError('Keygen message on round ${message.payload.round} of party ${message.payload.party} has incorrect creation date');
     // } else
     if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
-      return StateError('Keygen message on round ${message.payload.round} of party ${message.payload.party} expired');
+      return false;
     } else {
-      return null;
+      return true;
     }
   }
 
