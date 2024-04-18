@@ -38,3 +38,23 @@ class FetchRemoteBackupAction {
     _completer.completeError(error);
   }
 }
+
+class RemoteBackupListener {
+  final SharedDatabase _sharedDatabase;
+  final PairingData _pairingData;
+
+  RemoteBackupListener(this._sharedDatabase, this._pairingData);
+
+  Stream<BackupMessage> remoteBackupRequests() {
+    return _sharedDatabase.backupUpdates(_pairingData.pairingId).map(_handleMessage);
+  }
+
+  BackupMessage _handleMessage(BackupMessage message) {
+    if (message.backupData.isEmpty) {
+      return message;
+    } else {
+      _sharedDatabase.deleteBackupMessage(_pairingData.pairingId);
+      return message;
+    }
+  }
+}

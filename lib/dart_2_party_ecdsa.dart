@@ -6,6 +6,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:dart_2_party_ecdsa/src/transport/messages/backup_message.dart';
 import 'package:meta/meta.dart';
 import 'package:async/async.dart';
 import 'package:sodium/sodium.dart';
@@ -243,7 +244,30 @@ final class Dart2PartySDK {
 
   late final BackupState backupState = BackupState(localDatabase);
 
-  CancelableOperation<String> fetchRemoteBackup(String accountAddress) {
+  // CancelableOperation<String> fetchRemoteBackup(String accountAddress) {
+  //   if (_state != SdkState.readyToSign) {
+  //     return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
+  //   }
+
+  //   final pairingData = pairingState.pairingData;
+  //   if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
+
+  //   final keyshare = keygenState.keyshares.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+  //   if (keyshare == null) {
+  //     return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
+  //   }
+
+  //   final fetchBackupAction = FetchRemoteBackupAction(_sharedDatabase, pairingData);
+  //   final fetchBackupOperation = CancelableOperation.fromFuture(fetchBackupAction.start(), onCancel: fetchBackupAction.cancel);
+
+  //   return fetchBackupOperation.then((remoteBackup) {
+  //     final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
+  //     backupState.addAccount(accountBackup);
+  //     return remoteBackup;
+  //   });
+  // }
+
+  CancelableOperation<Stream<BackupMessage>> requestRemoteBackup(String accountAddress) {
     if (_state != SdkState.readyToSign) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
     }
@@ -256,14 +280,15 @@ final class Dart2PartySDK {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
     }
 
-    final fetchBackupAction = FetchRemoteBackupAction(_sharedDatabase, pairingData);
-    final fetchBackupOperation = CancelableOperation.fromFuture(fetchBackupAction.start(), onCancel: fetchBackupAction.cancel);
-
-    return fetchBackupOperation.then((remoteBackup) {
-      final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.addAccount(accountBackup);
-      return remoteBackup;
-    });
+    final remoteBackupListener = RemoteBackupListener(_sharedDatabase, pairingData);
+    return CancelableOperation.fromValue(remoteBackupListener
+        .remoteBackupRequests() //
+        .tap((message) {
+      if (message.backupData.isNotEmpty) {
+        final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), message.backupData);
+        backupState.addAccount(accountBackup);
+      }
+    }));
   }
 
   void deleteBackup() {
