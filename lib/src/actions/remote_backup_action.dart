@@ -3,21 +3,22 @@
 
 import 'dart:async';
 
+import '../types/pairing_data.dart';
 import '../transport/messages/backup_message.dart';
 import '../transport/shared_database.dart';
 
 class FetchRemoteBackupAction {
   final SharedDatabase _sharedDatabase;
-  final String _userId;
+  final PairingData _pairingData;
   StreamSubscription<BackupMessage>? _streamSubscription;
 
-  final _completer = Completer<String>();
+  final _completer = Completer<BackupMessage>();
 
-  FetchRemoteBackupAction(this._sharedDatabase, this._userId);
+  FetchRemoteBackupAction(this._sharedDatabase, this._pairingData);
 
-  Future<String> start() async {
+  Future<BackupMessage> start() async {
     _streamSubscription = _sharedDatabase
-        .backupUpdates(_userId)
+        .backupUpdates(_pairingData.pairingId)
         .timeout(const Duration(seconds: 60))
         .listen(_handleMessage, onError: _handleError, cancelOnError: true);
     return _completer.future;
@@ -29,8 +30,8 @@ class FetchRemoteBackupAction {
 
   void _handleMessage(BackupMessage message) {
     cancel();
-    _sharedDatabase.deleteBackupMessage(_userId);
-    _completer.complete(message.backupData);
+    _sharedDatabase.deleteBackupMessage(_pairingData.pairingId);
+    _completer.complete(message);
   }
 
   void _handleError(Object error) {
