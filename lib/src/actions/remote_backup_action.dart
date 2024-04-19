@@ -46,20 +46,6 @@ class RemoteBackupListener {
   RemoteBackupListener(this._sharedDatabase, this._pairingData);
 
   Stream<BackupMessage> remoteBackupRequests() {
-    return _sharedDatabase.backupUpdates(_pairingData.pairingId).map(_handleMessage);
-  }
-
-  BackupMessage _handleMessage(BackupMessage message) {
-    if (message.backupData.isEmpty) {
-      return message;
-    } else {
-      _sharedDatabase.setBackupMessage(
-          _pairingData.pairingId,
-          BackupMessage(
-              backupData: '', //
-              isBackedUp: true,
-              pairingId: _pairingData.pairingId));
-      return message;
-    }
+    return _sharedDatabase.backupUpdates(_pairingData.pairingId);
   }
 }
