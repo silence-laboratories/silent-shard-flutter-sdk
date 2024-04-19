@@ -44,6 +44,7 @@ export 'src/types/account_backup.dart';
 export 'src/types/wallet_backup.dart';
 export 'src/actions/sign_listener.dart';
 export 'src/transport/messages/sign_message.dart';
+export 'src/transport/messages/backup_message.dart';
 
 enum SdkState {
   loaded,
