@@ -282,12 +282,16 @@ final class Dart2PartySDK {
     }
 
     final remoteBackupListener = RemoteBackupListener(_sharedDatabase, pairingData);
-    return remoteBackupListener
-        .remoteBackupRequests() //
-        .tap((remoteBackup) {
+    return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
       if (remoteBackup.backupData.isNotEmpty) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
         backupState.addAccount(accountBackup);
+        _sharedDatabase.setBackupMessage(
+            pairingData.pairingId,
+            BackupMessage(
+                backupData: '', //
+                isBackedUp: true,
+                pairingId: pairingData.pairingId));
       }
     });
   }
