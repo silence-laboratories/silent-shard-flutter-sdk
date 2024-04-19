@@ -12,11 +12,11 @@ class FetchRemoteBackupAction {
   final PairingData _pairingData;
   StreamSubscription<BackupMessage>? _streamSubscription;
 
-  final _completer = Completer<String>();
+  final _completer = Completer<BackupMessage>();
 
   FetchRemoteBackupAction(this._sharedDatabase, this._pairingData);
 
-  Future<String> start() async {
+  Future<BackupMessage> start() async {
     _streamSubscription = _sharedDatabase
         .backupUpdates(_pairingData.pairingId)
         .timeout(const Duration(seconds: 60))
@@ -31,7 +31,7 @@ class FetchRemoteBackupAction {
   void _handleMessage(BackupMessage message) {
     cancel();
     _sharedDatabase.deleteBackupMessage(_pairingData.pairingId);
-    _completer.complete(message.backupData);
+    _completer.complete(message);
   }
 
   void _handleError(Object error) {
