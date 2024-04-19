@@ -53,7 +53,12 @@ class RemoteBackupListener {
     if (message.backupData.isEmpty) {
       return message;
     } else {
-      _sharedDatabase.deleteBackupMessage(_pairingData.pairingId);
+      _sharedDatabase.setBackupMessage(
+          _pairingData.pairingId,
+          BackupMessage(
+              backupData: '', //
+              isBackedUp: true,
+              pairingId: _pairingData.pairingId));
       return message;
     }
   }
