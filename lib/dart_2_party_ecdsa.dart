@@ -267,28 +267,28 @@ final class Dart2PartySDK {
   //   });
   // }
 
-  CancelableOperation<Stream<BackupMessage>> requestRemoteBackup(String accountAddress) {
+  Stream<BackupMessage> requestRemoteBackup(String accountAddress) {
     if (_state != SdkState.readyToSign) {
-      return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
+      throw StateError('Cannot start backup when SDK in $_state state');
     }
 
     final pairingData = pairingState.pairingData;
-    if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
+    if (pairingData == null) throw StateError('Must be paired before backup');
 
     final keyshare = keygenState.keyshares.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
     if (keyshare == null) {
-      return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
+      throw StateError('Cannot find keyshare for $accountAddress');
     }
 
     final remoteBackupListener = RemoteBackupListener(_sharedDatabase, pairingData);
-    return CancelableOperation.fromValue(remoteBackupListener
+    return remoteBackupListener
         .remoteBackupRequests() //
         .tap((message) {
       if (message.backupData.isNotEmpty) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), message.backupData);
         backupState.addAccount(accountBackup);
       }
-    }));
+    });
   }
 
   void deleteBackup() {
