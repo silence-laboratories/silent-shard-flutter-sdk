@@ -33,12 +33,14 @@ final class SignRequest {
   final DateTime createdAt;
   final String? messageHash;
   final int? chainId;
+  final String? walletName;
 
   SignRequest._fromMessage(this._originalMessage, this.pairingId, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
       : accountId = _originalMessage.accountId,
         signType = _originalMessage.signMetadata,
         hashAlg = _originalMessage.hashAlg,
         message = _originalMessage.payload.message,
+        walletName = _originalMessage.walletName ?? "snap",
         createdAt = _originalMessage.createdAt;
 }
 
@@ -46,7 +48,7 @@ typedef SignRequestApprover = void Function(SignRequest request);
 
 class SignListener {
   final PairingData _pairingData;
-  final List<Keyshare2> _keyshares;
+  final Map<String, List<Keyshare2>> _keyshares;
   final SharedDatabase _sharedDatabase;
   final Sodium _sodium;
   final CTSSBindings _ctss;
@@ -78,8 +80,9 @@ class SignListener {
       return CancelableOperation.fromFuture(Future.error(error));
     }
 
-    final keyshare = _keyshares[request.accountId - 1];
-    final signAction = SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, keyshare, request.messageHash ?? request._originalMessage.messageHash);
+    final keyshare = _keyshares[request.walletName]![request.accountId - 1];
+    final signAction =
+        SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, keyshare, request.messageHash ?? request._originalMessage.messageHash);
 
     return CancelableOperation.fromFuture(signAction.start(), onCancel: signAction.cancel);
   }

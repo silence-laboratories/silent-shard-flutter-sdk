@@ -221,7 +221,7 @@ final class Dart2PartySDK {
 
   SignListener? _signListener;
 
-  SignListener? _updateSignListener(PairingData? pairingData, List<Keyshare2> keyshares) {
+  SignListener? _updateSignListener(PairingData? pairingData, Map<String, List<Keyshare2>> keyshares) {
     if (pairingData == null || keyshares.isEmpty) {
       _signListener = null;
     } else {
@@ -230,9 +230,9 @@ final class Dart2PartySDK {
     return _signListener;
   }
 
-  Stream<SignRequest> signRequests({String walletName = "snap"}) {
+  Stream<SignRequest> signRequests() {
     final pairingStream = pairingState.toStream((p) => p.pairingData);
-    final keysharesStream = keygenState.toStream((p) => p.keyshares).map((keysharesMap) => keysharesMap[walletName] ?? const []);
+    final keysharesStream = keygenState.toStream((p) => p.keyshares);
     return pairingStream //
         .combineLatest(keysharesStream, _updateSignListener)
         .map((listener) => listener?.signRequests() ?? const Stream<SignRequest>.empty())
