@@ -117,11 +117,11 @@ final class Dart2PartySDK {
 
   late PairingState pairingState = PairingState(localDatabase);
 
-  CancelableOperation<PairingData> startPairing(QRMessage message, String userId, {String walletName = "snap", WalletBackup? walletBackup}) {
+  CancelableOperation<PairingData> startPairing(QRMessage message, String userId, [WalletBackup? walletBackup]) {
     if (_state != SdkState.initialized) return CancelableOperation.fromFuture(Future.error(StateError('Cannot start pairing SDK in $_state state')));
 
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
-
+    final walletName = message.walletName;
     _pairingOperation = CancelableOperation.fromFuture(
       pairingAction.start(walletBackup?.combinedRemoteData(walletName)),
       onCancel: () {
@@ -157,7 +157,7 @@ final class Dart2PartySDK {
     return _pairingOperation!;
   }
 
-  CancelableOperation<PairingData> startRePairing(QRMessage message, String userId, {String walletName = "snap"}) {
+  CancelableOperation<PairingData> startRePairing(QRMessage message, String userId) {
     if (_state != SdkState.readyToSign) CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK in $_state state')));
 
     final walletBackup = backupState.walletBackup;
@@ -168,7 +168,7 @@ final class Dart2PartySDK {
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
 
     _pairingOperation = CancelableOperation.fromFuture(
-      pairingAction.start(walletBackup.combinedRemoteData(walletName)),
+      pairingAction.start(walletBackup.combinedRemoteData(message.walletName)),
       onCancel: pairingAction.cancel,
     ).then((pairingData) {
       // TODO: invalidate old sign listener
