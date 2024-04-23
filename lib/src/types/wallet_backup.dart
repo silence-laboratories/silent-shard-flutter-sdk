@@ -1,7 +1,6 @@
 // Copyright (c) Silence Laboratories Pte. Ltd.
 // This software is licensed under the Silence Laboratories License Agreement.
 
-import 'dart:collection';
 import 'dart:convert';
 
 import 'account_backup.dart';
@@ -9,7 +8,7 @@ import 'account_backup.dart';
 final class WalletBackup {
   Map<String, List<AccountBackup>> _accounts = {};
 
-  WalletBackup([accountsToAdd = const <AccountBackup>[]]) {
+  WalletBackup([accountsToAdd = const {}]) {
     _accounts.addAll(accountsToAdd);
   }
 
@@ -52,7 +51,7 @@ final class WalletBackup {
   List<dynamic> toJson() => _accounts.entries.map((e) => e.value.map((a) => a.toJson()).toList()).toList();
 
   factory WalletBackup.fromJson(Map<String, dynamic> json) {
-    var accountsToAdd = json.map((key, value) => MapEntry(key, value.map((e) => AccountBackup.fromJson(e)).toList()));
+    Map<String, List<AccountBackup>> accountsToAdd = json.map((key, value) => MapEntry(key, value.map((e) => AccountBackup.fromJson(e)).toList()));
     return WalletBackup(accountsToAdd);
   }
 }
