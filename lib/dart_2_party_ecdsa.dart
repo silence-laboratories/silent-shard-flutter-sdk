@@ -123,7 +123,7 @@ final class Dart2PartySDK {
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
     final walletName = message.walletName;
     _pairingOperation = CancelableOperation.fromFuture(
-      pairingAction.start(walletBackup?.combinedRemoteData(walletName)),
+      pairingAction.start(walletBackup?.combinedRemoteData),
       onCancel: () {
         pairingAction.cancel();
         _state = SdkState.initialized;
@@ -133,12 +133,8 @@ final class Dart2PartySDK {
       _state = SdkState.paired;
       if (walletBackup != null) {
         try {
-          // TODO: Make walletBackup also hold a map of list of backup accounts
-          if (walletBackup.accounts[walletName] == null) {
-            throw StateError('No backup data for wallet $walletName');
-          }
           keygenState.keyshares[walletName] =
-              walletBackup.accounts[walletName]!.map((accountBackup) => Keyshare2.fromBytes(ctss, accountBackup.keyshareData)).toList();
+              walletBackup.accounts.map((accountBackup) => Keyshare2.fromBytes(ctss, accountBackup.keyshareData)).toList();
           backupState.walletBackup = walletBackup;
           _state = SdkState.readyToSign;
         } catch (error) {
@@ -168,7 +164,7 @@ final class Dart2PartySDK {
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
 
     _pairingOperation = CancelableOperation.fromFuture(
-      pairingAction.start(walletBackup.combinedRemoteData(message.walletName)),
+      pairingAction.start(walletBackup.combinedRemoteData),
       onCancel: pairingAction.cancel,
     ).then((pairingData) {
       // TODO: invalidate old sign listener
@@ -269,7 +265,7 @@ final class Dart2PartySDK {
     return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
       if (remoteBackup.backupData.isNotEmpty) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
-        backupState.addAccount(walletName, accountBackup);
+        backupState.addAccount(accountBackup);
         _sharedDatabase.setBackupMessage(
             pairingData.pairingId,
             BackupMessage(
