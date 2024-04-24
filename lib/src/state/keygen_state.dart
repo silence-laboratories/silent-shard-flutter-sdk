@@ -11,9 +11,9 @@ class KeygenState extends ChangeNotifier {
 
   KeygenState(this._database);
 
-  Map<String, List<Keyshare2>> get keyshares => _database.keyshares;
+  Map<String, List<Keyshare2>> get keysharesMap => _database.keyshares;
 
-  set keyshares(Map<String, List<Keyshare2>> keyshares) {
+  set keysharesMap(Map<String, List<Keyshare2>> keyshares) {
     _database.keyshares = keyshares;
     notifyListeners();
   }

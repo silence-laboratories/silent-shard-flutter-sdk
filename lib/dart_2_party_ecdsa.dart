@@ -96,7 +96,7 @@ final class Dart2PartySDK {
   }
 
   void _initState() {
-    switch ((pairingState.pairingData, keygenState.keyshares.isEmpty)) {
+    switch ((pairingState.pairingData, keygenState.keysharesMap.isEmpty)) {
       case (_?, false):
         _state = SdkState.readyToSign;
       case (_?, true):
@@ -135,9 +135,9 @@ final class Dart2PartySDK {
       _state = SdkState.paired;
       if (walletBackup != null) {
         try {
-          keygenState.keyshares[walletName] =
+          keygenState.keysharesMap[walletName] =
               walletBackup.accounts.map((accountBackup) => Keyshare2.fromBytes(ctss, accountBackup.keyshareData)).toList();
-          backupState.walletBackup = walletBackup;
+          backupState.addAccounts(walletName, walletBackup.accounts);
           _state = SdkState.readyToSign;
         } catch (error) {
           _state = SdkState.initialized;
@@ -158,8 +158,11 @@ final class Dart2PartySDK {
   CancelableOperation<PairingData> startRePairing(QRMessage message, String userId) {
     if (_state != SdkState.readyToSign) CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK in $_state state')));
 
-    final walletBackup = backupState.walletBackup;
-    if (walletBackup.accounts.isEmpty) {
+    final walletBackup = backupState.walletBackupMap[message.walletName];
+    if (walletBackup == null) {
+      CancelableOperation.fromFuture(Future.error(StateError('No backup data for ${message.walletName}')));
+    }
+    if (walletBackup!.accounts.isEmpty) {
       CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK without remote backup data')));
     }
 
@@ -230,7 +233,7 @@ final class Dart2PartySDK {
 
   Stream<SignRequest> signRequests(String userId) {
     final pairingStream = pairingState.toStream((p) => p.pairingData);
-    final keysharesStream = keygenState.toStream((p) => p.keyshares);
+    final keysharesStream = keygenState.toStream((p) => p.keysharesMap);
     return pairingStream //
         .combineLatest(
           keysharesStream,
@@ -257,11 +260,11 @@ final class Dart2PartySDK {
     final pairingData = pairingState.pairingData;
     if (pairingData == null) throw StateError('Must be paired before backup');
 
-    if (keygenState.keyshares[walletName] == null) {
+    if (keygenState.keysharesMap[walletName] == null) {
       throw StateError('No keyshares for $walletName');
     }
 
-    final keyshare = keygenState.keyshares[walletName]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+    final keyshare = keygenState.keysharesMap[walletName]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
     if (keyshare == null) {
       throw StateError('Cannot find keyshare for $accountAddress');
     }
@@ -270,7 +273,7 @@ final class Dart2PartySDK {
     return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
       if (remoteBackup.backupData.isNotEmpty) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
-        backupState.addAccount(accountBackup);
+        backupState.addAccount(walletName, accountBackup);
         _sharedDatabase.setBackupMessage(
             pairingData.pairingId,
             BackupMessage(
@@ -286,13 +289,14 @@ final class Dart2PartySDK {
     backupState.clearAccounts();
   }
 
-  CancelableOperation<WalletBackup> walletBackup() {
+  CancelableOperation<WalletBackup> walletBackup(String walletName) {
     if (_state != SdkState.readyToSign) CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
 
-    final keyshares = keygenState.keyshares;
-    if (keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
+    final keyshares = keygenState.keysharesMap[walletName];
+    if (keyshares == null || keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
 
-    final walletBackup = backupState.walletBackup;
+    final walletBackup = backupState.walletBackupMap[walletName];
+    if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletName')));
     assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
 
     return CancelableOperation.fromValue(walletBackup);
