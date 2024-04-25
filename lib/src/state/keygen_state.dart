@@ -18,18 +18,18 @@ class KeygenState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addKeyshare(String walletName, Keyshare2 newKeyshare) {
-    _database.addKeyshare(walletName, newKeyshare);
+  void addKeyshare(String walletId, Keyshare2 newKeyshare) {
+    _database.addKeyshare(walletId, newKeyshare);
     notifyListeners();
   }
 
-  void addKeyshares(String walletName, Iterable<Keyshare2> newKeyshares) {
-    _database.addKeyshares(walletName, newKeyshares);
+  void addKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
+    _database.addKeyshares(walletId, newKeyshares);
     notifyListeners();
   }
 
-  void removeKeyshareAt(String walletName, int index) {
-    _database.removeKeyshareAt(walletName, index);
+  void removeKeyshareAt(String walletId, int index) {
+    _database.removeKeyshareAt(walletId, index);
     notifyListeners();
   }
 

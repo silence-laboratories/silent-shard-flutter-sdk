@@ -78,7 +78,7 @@ final class SignMessage {
   SignPayload payload;
   final String messageToSign;
   final String messageHash;
-  final String? walletName;
+  final String? walletId;
   bool? isApproved;
   final Duration expirationTimeout;
   final DateTime createdAt;
@@ -93,7 +93,7 @@ final class SignMessage {
     this.messageToSign,
     this.messageHash,
     this.isApproved,
-    this.walletName, {
+    this.walletId, {
     this.expirationTimeout = const Duration(seconds: 60),
     DateTime? created,
   }) : createdAt = created ?? DateTime.now();
@@ -112,7 +112,7 @@ final class SignMessage {
       json['signMessage'],
       json['messageHash'],
       json['isApproved'],
-      json['walletName'],
+      json['walletId'],
       expirationTimeout: expirationTimeout,
       created: createdAt,
     );
