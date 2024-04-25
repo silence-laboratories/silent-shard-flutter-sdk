@@ -19,23 +19,23 @@ class BackupState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addAccount(String walletName, AccountBackup backup) {
-    _database.addAccount(walletName, backup);
+  void addAccount(String walletId, AccountBackup backup) {
+    _database.addAccount(walletId, backup);
     notifyListeners();
   }
 
-  void addAccounts(String walletName, Iterable<AccountBackup> backups) {
-    _database.addAccounts(walletName, backups);
+  void addAccounts(String walletId, Iterable<AccountBackup> backups) {
+    _database.addAccounts(walletId, backups);
     notifyListeners();
   }
 
-  void removeAccount(String walletName, AccountBackup backup) {
-    _database.removeAccount(walletName, backup);
+  void removeAccount(String walletId, AccountBackup backup) {
+    _database.removeAccount(walletId, backup);
     notifyListeners();
   }
 
-  void removeAccountAt(String walletName, int index) {
-    _database.removeAccountAt(walletName, index);
+  void removeAccountAt(String walletId, int index) {
+    _database.removeAccountAt(walletId, index);
     notifyListeners();
   }
 

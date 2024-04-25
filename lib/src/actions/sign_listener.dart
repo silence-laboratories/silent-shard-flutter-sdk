@@ -32,14 +32,14 @@ final class SignRequest {
   final DateTime createdAt;
   final String? messageHash;
   final int? chainId;
-  final String? walletName;
+  final String? walletId;
 
   SignRequest._fromMessage(this._originalMessage, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
       : accountId = _originalMessage.accountId,
         signType = _originalMessage.signMetadata,
         hashAlg = _originalMessage.hashAlg,
         message = _originalMessage.payload.message,
-        walletName = _originalMessage.walletName ?? "snap",
+        walletId = _originalMessage.walletId ?? "snap",
         createdAt = _originalMessage.createdAt;
 }
 
@@ -75,7 +75,12 @@ class SignListener {
       return CancelableOperation.fromFuture(Future.error(error));
     }
 
-    final keyshare = _keyshares[request.walletName]![request.accountId - 1];
+    if (_keyshares[request.walletId] == null) {
+      final error = StateError('No keyshares for wallet ${request.walletId}');
+      return CancelableOperation.fromFuture(Future.error(error));
+    }
+
+    final keyshare = _keyshares[request.walletId]![request.accountId - 1];
     final signAction =
         SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, _userId, keyshare, request.messageHash ?? request._originalMessage.messageHash);
 

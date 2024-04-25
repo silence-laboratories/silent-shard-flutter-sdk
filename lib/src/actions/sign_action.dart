@@ -146,7 +146,7 @@ class SignAction {
       message.messageToSign,
       message.messageHash,
       true,
-      message.walletName,
+      message.walletId,
     );
     _sharedDatabase.setSignMessage(_userId, signMessage2);
   }

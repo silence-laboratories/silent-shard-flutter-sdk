@@ -74,27 +74,27 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void addKeyshare(String walletName, Keyshare2 newKeyshare) {
-    if (_keyshares.containsKey(walletName)) {
-      _keyshares[walletName]!.add(newKeyshare);
+  void addKeyshare(String walletId, Keyshare2 newKeyshare) {
+    if (_keyshares.containsKey(walletId)) {
+      _keyshares[walletId]!.add(newKeyshare);
     } else {
-      _keyshares[walletName] = [newKeyshare];
+      _keyshares[walletId] = [newKeyshare];
     }
     saveToStorage();
   }
 
-  void addKeyshares(String walletName, Iterable<Keyshare2> newKeyshares) {
-    if (_keyshares.containsKey(walletName)) {
-      _keyshares[walletName]!.addAll(newKeyshares);
+  void addKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
+    if (_keyshares.containsKey(walletId)) {
+      _keyshares[walletId]!.addAll(newKeyshares);
     } else {
-      _keyshares[walletName] = List.of(newKeyshares);
+      _keyshares[walletId] = List.of(newKeyshares);
     }
     saveToStorage();
   }
 
-  void removeKeyshareAt(String walletName, int index) {
-    if (_keyshares.containsKey(walletName)) {
-      _keyshares[walletName]!.removeAt(index);
+  void removeKeyshareAt(String walletId, int index) {
+    if (_keyshares.containsKey(walletId)) {
+      _keyshares[walletId]!.removeAt(index);
     }
     saveToStorage();
   }
@@ -113,34 +113,34 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void addAccount(String walletName, AccountBackup backup) {
-    if (_walletBackups.containsKey(walletName)) {
-      _walletBackups[walletName]!.addAccount(backup);
+  void addAccount(String walletId, AccountBackup backup) {
+    if (_walletBackups.containsKey(walletId)) {
+      _walletBackups[walletId]!.addAccount(backup);
     } else {
-      _walletBackups[walletName] = WalletBackup([backup]);
+      _walletBackups[walletId] = WalletBackup([backup]);
     }
     saveToStorage();
   }
 
-  void addAccounts(String walletName, Iterable<AccountBackup> backups) {
-    if (_walletBackups.containsKey(walletName)) {
-      _walletBackups[walletName]!.addAccounts(backups);
+  void addAccounts(String walletId, Iterable<AccountBackup> backups) {
+    if (_walletBackups.containsKey(walletId)) {
+      _walletBackups[walletId]!.addAccounts(backups);
     } else {
-      _walletBackups[walletName] = WalletBackup(backups);
+      _walletBackups[walletId] = WalletBackup(backups);
     }
     saveToStorage();
   }
 
-  void removeAccount(String walletName, AccountBackup backup) {
-    if (_walletBackups.containsKey(walletName)) {
-      _walletBackups[walletName]!.removeAccount(backup);
+  void removeAccount(String walletId, AccountBackup backup) {
+    if (_walletBackups.containsKey(walletId)) {
+      _walletBackups[walletId]!.removeAccount(backup);
     }
     saveToStorage();
   }
 
-  void removeAccountAt(String walletName, int index) {
-    if (_walletBackups.containsKey(walletName)) {
-      _walletBackups[walletName]!.removeAccountAt(index);
+  void removeAccountAt(String walletId, int index) {
+    if (_walletBackups.containsKey(walletId)) {
+      _walletBackups[walletId]!.removeAccountAt(index);
     }
     saveToStorage();
   }
