@@ -67,7 +67,8 @@ class LocalDatabase {
 
   // --- Keyshares ---
 
-  Map<String, List<Keyshare2>> get keyshares => Map.unmodifiable(_keyshares.map((key, value) => MapEntry(key, List.unmodifiable(value))));
+  Map<String, List<Keyshare2>> get keyshares => Map<String, List<Keyshare2>>.unmodifiable(_keyshares.map(//
+      (key, value) => MapEntry(key, List<Keyshare2>.unmodifiable(value))));
 
   set keyshares(Map<String, List<Keyshare2>> newKeyshares) {
     _keyshares = Map.of(newKeyshares);
