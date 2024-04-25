@@ -74,26 +74,26 @@ final class SignMessage {
   final int accountId;
   final String hashAlg;
   final SignType signMetadata;
-  final String pubicKey;
+  final String publicKey;
   SignPayload payload;
-  final String messageToSign;
+  final String signMessage;
   final String messageHash;
   final String? walletId;
   bool? isApproved;
   final Duration expirationTimeout;
   final DateTime createdAt;
 
-  SignMessage(
-    this.sessionId,
-    this.accountId,
-    this.hashAlg,
-    this.signMetadata,
-    this.pubicKey,
-    this.payload,
-    this.messageToSign,
-    this.messageHash,
+  SignMessage({
+    required this.sessionId,
+    required this.accountId,
+    required this.hashAlg,
+    required this.signMetadata,
+    required this.publicKey,
+    required this.payload,
+    required this.signMessage,
+    required this.messageHash,
     this.isApproved,
-    this.walletId, {
+    this.walletId,
     this.expirationTimeout = const Duration(seconds: 60),
     DateTime? created,
   }) : createdAt = created ?? DateTime.now();
@@ -103,16 +103,16 @@ final class SignMessage {
     final expirationTimeout = Duration(milliseconds: json['expiry']);
     final createdAt = DateTime.fromMillisecondsSinceEpoch(json['createdAt']);
     return SignMessage(
-      json['sessionId'],
-      json['accountId'],
-      json['hashAlg'],
-      SignType.fromString(json['signMetadata']),
-      json['publicKey'],
-      payload,
-      json['signMessage'],
-      json['messageHash'],
-      json['isApproved'],
-      json['walletId'],
+      sessionId: json['sessionId'],
+      accountId: json['accountId'],
+      hashAlg: json['hashAlg'],
+      signMetadata: SignType.fromString(json['signMetadata']),
+      publicKey: json['publicKey'],
+      payload: payload,
+      signMessage: json['signMessage'],
+      messageHash: json['messageHash'],
+      isApproved: json['isApproved'],
+      walletId: json['walletId'] ?? "snap",
       expirationTimeout: expirationTimeout,
       created: createdAt,
     );
@@ -123,12 +123,13 @@ final class SignMessage {
         'accountId': accountId,
         'hashAlg': hashAlg,
         'signMetadata': signMetadata.toString(),
-        'publicKey': pubicKey,
+        'publicKey': publicKey,
         'message': payload.toJson(),
-        'signMessage': messageToSign,
+        'signMessage': signMessage,
         'messageHash': messageHash,
         'isApproved': isApproved ?? false,
         'expiry': expirationTimeout.inMilliseconds,
-        'createdAt': createdAt.millisecondsSinceEpoch
+        'createdAt': createdAt.millisecondsSinceEpoch,
+        'walletId': walletId ?? "snap"
       };
 }
