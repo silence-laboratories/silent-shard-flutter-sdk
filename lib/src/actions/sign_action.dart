@@ -137,16 +137,16 @@ class SignAction {
   void _sendMessage(String payload, SignMessage message, int round) {
     var (encryptedPayload, nonce) = _encryptPayload(payload);
     final signMessage2 = SignMessage(
-      message.sessionId,
-      message.accountId,
-      message.hashAlg,
-      message.signMetadata,
-      message.pubicKey,
-      SignPayload(encryptedPayload, nonce, round, 2),
-      message.messageToSign,
-      message.messageHash,
-      true,
-      message.walletId,
+      sessionId: message.sessionId,
+      accountId: message.accountId,
+      hashAlg: message.hashAlg,
+      signMetadata: message.signMetadata,
+      publicKey: message.publicKey,
+      payload: SignPayload(encryptedPayload, nonce, round, 2),
+      signMessage: message.signMessage,
+      messageHash: message.messageHash,
+      isApproved: true,
+      walletId: message.walletId,
     );
     _sharedDatabase.setSignMessage(_userId, signMessage2);
   }
