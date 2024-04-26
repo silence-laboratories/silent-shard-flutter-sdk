@@ -317,7 +317,8 @@ final class Dart2PartySDK {
 
     final keyshares = keygenState.keysharesMap[walletId];
     if (keyshares == null || keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
-
+    print("backupState.walletBackupMap ${backupState.walletBackupMap}");
+    print("backupState.walletBackupMap[walletId] ${backupState.walletBackupMap[walletId]}");
     final walletBackup = backupState.walletBackupMap[walletId];
     if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletId')));
     assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
