@@ -112,7 +112,7 @@ final class SignMessage {
       signMessage: json['signMessage'],
       messageHash: json['messageHash'],
       isApproved: json['isApproved'],
-      walletId: json['walletId'] ?? "snap",
+      walletId: json['walletId'] ?? "metamask",
       expirationTimeout: expirationTimeout,
       created: createdAt,
     );
@@ -130,6 +130,6 @@ final class SignMessage {
         'isApproved': isApproved ?? false,
         'expiry': expirationTimeout.inMilliseconds,
         'createdAt': createdAt.millisecondsSinceEpoch,
-        'walletId': walletId ?? "snap"
+        'walletId': walletId ?? "metamask"
       };
 }
