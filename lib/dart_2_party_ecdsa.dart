@@ -137,9 +137,15 @@ final class Dart2PartySDK {
       _state = SdkState.paired;
       if (walletBackup != null) {
         try {
+          print("backupppppppp startPairing $walletId $walletBackup");
+          print("keygenState.keysharesMap ${keygenState.keysharesMap}");
+          print("keygenState.keysharesMap.walletId ${keygenState.keysharesMap[walletId]}");
           keygenState.keysharesMap[walletId] =
               walletBackup.accounts.map((accountBackup) => Keyshare2.fromBytes(ctss, accountBackup.keyshareData)).toList();
+          print("keygenState.keysharesMap ${keygenState.keysharesMap}");
+          print("keygenState.keysharesMap.walletId ${keygenState.keysharesMap[walletId]}");
           backupState.addAccounts(walletId, walletBackup.accounts);
+          print("backupState ${backupState}");
           _state = SdkState.readyToSign;
         } catch (error) {
           _state = SdkState.initialized;
