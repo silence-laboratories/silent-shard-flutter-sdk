@@ -101,9 +101,7 @@ class LocalDatabase {
   }
 
   void removeAllKeyshares(String walletId) {
-    if (_keyshares.containsKey(walletId)) {
-      _keyshares[walletId]!.clear();
-    }
+    _keyshares.remove(walletId);
     saveToStorage();
   }
 
@@ -149,9 +147,7 @@ class LocalDatabase {
   }
 
   void removeAllBackups(String walletId) {
-    if (_walletBackups.containsKey(walletId)) {
-      _walletBackups[walletId]!.clearAccounts();
-    }
+    _walletBackups.remove(walletId);
     saveToStorage();
   }
 }
