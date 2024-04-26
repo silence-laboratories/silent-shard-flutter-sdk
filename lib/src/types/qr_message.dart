@@ -12,6 +12,6 @@ final class QRMessage {
       : pairingId = json['pairingId'],
         webEncPublicKey = json['webEncPublicKey'],
         signPublicKey = json['signPublicKey'],
-        walletId = json['walletId'] ?? "snap",
+        walletId = json['walletId'] ?? "metamask",
         isDemo = json['SLADemo'] ?? false;
 }

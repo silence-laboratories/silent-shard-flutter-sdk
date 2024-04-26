@@ -256,7 +256,7 @@ final class Dart2PartySDK {
     }
     final pairingData = pairingState.pairingData;
     if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
-    final keyshare = keygenState.keysharesMap["snap"]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+    final keyshare = keygenState.keysharesMap["metamask"]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
     if (keyshare == null) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
     }
@@ -265,12 +265,12 @@ final class Dart2PartySDK {
 
     return fetchBackupOperation.then((remoteBackup) {
       final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.addAccount("snap", accountBackup);
+      backupState.addAccount("metamask", accountBackup);
       return remoteBackup;
     });
   }
 
-  Stream<BackupMessage> listenRemoteBackup(String accountAddress, {String walletId = "snap"}) {
+  Stream<BackupMessage> listenRemoteBackup(String accountAddress, {String walletId = "metamask"}) {
     if (_state != SdkState.readyToSign) {
       throw StateError('Cannot start backup when SDK in $_state state');
     }
@@ -312,8 +312,6 @@ final class Dart2PartySDK {
 
     final keyshares = keygenState.keysharesMap[walletId];
     if (keyshares == null || keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
-    print("backupState.walletBackupMap ${backupState.walletBackupMap}");
-    print("backupState.walletBackupMap[walletId] ${backupState.walletBackupMap[walletId]}");
     final walletBackup = backupState.walletBackupMap[walletId];
     if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletId')));
     assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
