@@ -106,10 +106,10 @@ final class Dart2PartySDK {
     }
   }
 
-  void reset() {
+  void reset(String walletId) {
     if (_state == SdkState.loaded) throw StateError('Cannot cleanup SDK in $_state state');
-    deleteBackup();
-    deleteKeyshares();
+    deleteBackup(walletId);
+    deleteKeyshares(walletId);
     unpairIfNoKeyshares();
   }
 
@@ -214,9 +214,9 @@ final class Dart2PartySDK {
     });
   }
 
-  void deleteKeyshares() {
+  void deleteKeyshares(walletId) {
     if (_state != SdkState.readyToSign) return;
-    keygenState.removeAllKeyshares();
+    keygenState.removeAllKeyshares(walletId);
     _state = SdkState.paired;
   }
 
@@ -286,9 +286,9 @@ final class Dart2PartySDK {
     });
   }
 
-  void deleteBackup() {
+  void deleteBackup(String walletId) {
     if (_state == SdkState.loaded) throw StateError('Cannot delete backup when SDK in $_state state');
-    backupState.clearAccounts();
+    backupState.clearAccounts(walletId);
   }
 
   CancelableOperation<WalletBackup> walletBackup(String walletId) {
