@@ -19,13 +19,13 @@ class BackupState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addAccount(String walletId, AccountBackup backup) {
-    _database.addAccount(walletId, backup);
+  void replaceAccount(String walletId, AccountBackup backup) {
+    _database.replaceAccount(walletId, backup);
     notifyListeners();
   }
 
-  void addAccounts(String walletId, Iterable<AccountBackup> backups) {
-    _database.addAccounts(walletId, backups);
+  void replaceAccounts(String walletId, Iterable<AccountBackup> backups) {
+    _database.replaceAccounts(walletId, backups);
     notifyListeners();
   }
 
