@@ -36,8 +36,24 @@ class LocalDatabase {
       try {
         final json = jsonDecode(data);
         pairingData = PairingData.fromJson(sodium, json['pairingData']);
-        keyshares =
-            json['keyshares']?.map<Keyshare2>((key, value) => MapEntry(key, (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList()));
+        final keysharesJson = json['keyshares'];
+        if (keysharesJson != null) {
+          keysharesJson.forEach((key, value) {
+            keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
+          });
+        } else {
+          throw Exception('Keyshares map not found in local storage');
+        }
+
+        final walletBackupJson = json['backup'];
+        if (walletBackupJson != null) {
+          walletBackupJson.forEach((key, value) {
+            walletBackup[key] = WalletBackup.fromJson(value);
+          });
+        } else {
+          throw Exception('Wallet backup map not found in local storage');
+        }
+
         walletBackup = json['backup']?.map<WalletBackup>((key, value) => MapEntry(key, WalletBackup.fromJson(value)));
       } catch (e) {
         print('Failed to load local state: $e');
@@ -53,6 +69,7 @@ class LocalDatabase {
       'keyshares': _keyshares.map((key, value) => MapEntry(key, value.map((e) => e.toBytes()).toList())),
       'backup': _walletBackups.map((key, value) => MapEntry(key, value.toJson())),
     };
+    print('Saving to storage: $json');
     _storage.setString(storageKey, jsonEncode(json));
   }
 
@@ -83,9 +100,10 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void addKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
+  void replaceKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
     if (_keyshares.containsKey(walletId)) {
-      _keyshares[walletId]!.addAll(newKeyshares);
+      _keyshares.remove(walletId);
+      _keyshares[walletId] = List.of(newKeyshares);
     } else {
       _keyshares[walletId] = List.of(newKeyshares);
     }
@@ -113,18 +131,20 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void addAccount(String walletId, AccountBackup backup) {
+  void replaceAccount(String walletId, AccountBackup backup) {
     if (_walletBackups.containsKey(walletId)) {
-      _walletBackups[walletId]!.addAccount(backup);
+      _walletBackups.remove(walletId);
+      _walletBackups[walletId] = WalletBackup([backup]);
     } else {
       _walletBackups[walletId] = WalletBackup([backup]);
     }
     saveToStorage();
   }
 
-  void addAccounts(String walletId, Iterable<AccountBackup> backups) {
+  void replaceAccounts(String walletId, Iterable<AccountBackup> backups) {
     if (_walletBackups.containsKey(walletId)) {
-      _walletBackups[walletId]!.addAccounts(backups);
+      _walletBackups.remove(walletId);
+      _walletBackups[walletId] = WalletBackup(backups);
     } else {
       _walletBackups[walletId] = WalletBackup(backups);
     }
