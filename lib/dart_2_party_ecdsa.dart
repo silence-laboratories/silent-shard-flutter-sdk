@@ -289,7 +289,7 @@ final class Dart2PartySDK {
   // --- Users ---
 
   void updateMessagingToken(String userId, String token) {
-    _sharedDatabase.updateUserData(userId, UserData(FCMData(token), null));
+    _sharedDatabase.setUserData(userId, UserData(FCMData(token), null), true);
   }
 
   Stream<UserData> snapVersionListener(String userId) {

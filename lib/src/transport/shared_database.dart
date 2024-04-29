@@ -52,9 +52,7 @@ class SharedDatabase {
 
   // --- Users ---
 
-  Future<void> setUserData(String userId, UserData data) => _transport.set("users", userId, data.toJson());
-
-  Future<void> updateUserData(String userId, UserData data) => _transport.update("users", userId, data.toJson());
+  Future<void> setUserData(String userId, UserData data, bool? mergeData) => _transport.set("users", userId, data.toJson(), mergeData ?? false);
 
   Future<void> deleteUserData(String userId) => _transport.delete("users", userId);
 

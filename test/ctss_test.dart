@@ -25,7 +25,7 @@ class TransportMock implements Transport {
   }
 
   @override
-  Future<void> set(String collection, String docId, Map<String, dynamic> data) {
+  Future<void> set(String collection, String docId, Map<String, dynamic> data, [bool? mergeData]) {
     // TODO: implement set
     throw UnimplementedError();
   }
@@ -33,12 +33,6 @@ class TransportMock implements Transport {
   @override
   Stream<Map<String, dynamic>?> updates(String collection, String docId) {
     // TODO: implement updates
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> update(String collection, String docId, Map<String, dynamic> data) {
-    // TODO: implement update
     throw UnimplementedError();
   }
 }
