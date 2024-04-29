@@ -35,6 +35,12 @@ class TransportMock implements Transport {
     // TODO: implement updates
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> update(String collection, String docId, Map<String, dynamic> data) {
+    // TODO: implement update
+    throw UnimplementedError();
+  }
 }
 
 void main() {

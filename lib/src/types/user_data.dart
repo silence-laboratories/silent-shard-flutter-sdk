@@ -27,10 +27,13 @@ final class FCMData {
 
 final class UserData {
   final FCMData fcmData;
+  final String? snapVersion;
 
-  UserData(this.fcmData);
+  UserData(this.fcmData, this.snapVersion);
 
-  UserData.fromJson(Map<String, dynamic> json) : fcmData = FCMData.fromJson(json['fcm']);
+  UserData.fromJson(Map<String, dynamic> json)
+      : fcmData = FCMData.fromJson(json['fcm']),
+        snapVersion = json['snapVersion'];
 
   Map<String, dynamic> toJson() => {
         'fcm': fcmData.toJson(),

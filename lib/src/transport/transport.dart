@@ -10,6 +10,9 @@ abstract interface class Transport {
   /// Set specific document with [docId] in [collection]
   Future<void> set(String collection, String docId, Map<String, dynamic> data);
 
+  /// Update specific document with [docId] in [collection]
+  Future<void> update(String collection, String docId, Map<String, dynamic> data);
+
   /// Delete specific document with [docId] in [collection]
   Future<void> delete(String collection, String docId);
 }
