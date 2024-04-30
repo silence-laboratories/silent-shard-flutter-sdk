@@ -41,6 +41,7 @@ export 'src/types/pairing_data.dart';
 export 'src/types/keyshare.dart';
 export 'src/types/account_backup.dart';
 export 'src/types/wallet_backup.dart';
+export 'src/types/user_data.dart';
 export 'src/actions/sign_listener.dart';
 export 'src/transport/messages/sign_message.dart';
 
