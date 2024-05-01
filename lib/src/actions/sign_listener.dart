@@ -131,8 +131,8 @@ class SignListener {
 
   SignMessage? _filter(SignMessage message) {
     if (message.payload.party != 1 || message.payload.round != 1 || message.isApproved != null) return null;
-
-    if (message.accountId > _keyshares.length || !_validateMessageDate(message)) {
+    if (_keyshares[message.walletId] == null) return null;
+    if (message.accountId > _keyshares[message.walletId]!.length || !_validateMessageDate(message)) {
       _sendDeclineMessage(message);
       return null;
     }
