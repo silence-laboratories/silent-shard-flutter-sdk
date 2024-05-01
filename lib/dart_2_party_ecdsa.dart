@@ -161,10 +161,10 @@ final class Dart2PartySDK {
 
     final walletBackup = backupState.walletBackupMap[message.walletId];
     if (walletBackup == null) {
-      CancelableOperation.fromFuture(Future.error(StateError('No backup data for ${message.walletId}')));
+      return CancelableOperation.fromFuture(Future.error(StateError('No backup data for ${message.walletId}')));
     }
-    if (walletBackup!.accounts.isEmpty) {
-      CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK without remote backup data')));
+    if (walletBackup.accounts.isEmpty) {
+      return CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK without remote backup data')));
     }
 
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
