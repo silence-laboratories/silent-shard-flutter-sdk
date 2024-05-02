@@ -216,7 +216,7 @@ final class Dart2PartySDK {
   }
 
   void deleteKeyshares(walletId) {
-    if (_state != SdkState.readyToSign) return;
+    if (_state != SdkState.readyToSign && _state != SdkState.initialized) return;
     keygenState.removeAllKeyshares(walletId);
     _state = SdkState.paired;
   }
