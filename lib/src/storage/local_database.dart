@@ -35,7 +35,10 @@ class LocalDatabase {
     if (data != null) {
       try {
         final json = jsonDecode(data);
-        pairingData = PairingData.fromJson(sodium, json['pairingData']);
+        if (json['pairingData'] != null) {
+          pairingData = PairingData.fromJson(sodium, json['pairingData']);
+        }
+
         final keysharesJson = json['keyshares'];
         if (keysharesJson != null) {
           keysharesJson.forEach((key, value) {
@@ -53,8 +56,6 @@ class LocalDatabase {
         } else {
           throw Exception('Wallet backup map not found in local storage');
         }
-
-        walletBackup = json['backup']?.map<WalletBackup>((key, value) => MapEntry(key, WalletBackup.fromJson(value)));
       } catch (e) {
         print('Failed to load local state: $e');
       }
