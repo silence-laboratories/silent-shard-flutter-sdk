@@ -44,8 +44,6 @@ class LocalDatabase {
           keysharesJson.forEach((key, value) {
             keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
           });
-        } else {
-          throw Exception('Keyshares map not found in local storage');
         }
 
         final walletBackupJson = json['backup'];
@@ -53,8 +51,6 @@ class LocalDatabase {
           walletBackupJson.forEach((key, value) {
             walletBackup[key] = WalletBackup.fromJson(value);
           });
-        } else {
-          throw Exception('Wallet backup map not found in local storage');
         }
       } catch (e) {
         print('Failed to load local state: $e');
