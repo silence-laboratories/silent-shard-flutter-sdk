@@ -188,7 +188,7 @@ final class Dart2PartySDK {
 
   late KeygenState keygenState = KeygenState(localDatabase);
 
-  CancelableOperation<Keyshare2> startKeygen() {
+  CancelableOperation<Keyshare2> startKeygen(String userId) {
     if (_state.index < SdkState.paired.index) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start keygen when SDK in $_state state')));
     }
@@ -196,7 +196,7 @@ final class Dart2PartySDK {
     final pairingData = pairingState.pairingData;
     if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before key generation')));
 
-    final keygenAction = KeygenAction(sodium, ctss, _sharedDatabase, pairingData);
+    final keygenAction = KeygenAction(sodium, ctss, _sharedDatabase, pairingData, userId);
     final keygenOperation = CancelableOperation.fromFuture(keygenAction.start(), onCancel: keygenAction.cancel);
 
     return keygenOperation.then((keyshare) {
@@ -216,20 +216,23 @@ final class Dart2PartySDK {
 
   SignListener? _signListener;
 
-  SignListener? _updateSignListener(PairingData? pairingData, List<Keyshare2> keyshares) {
+  SignListener? _updateSignListener(PairingData? pairingData, List<Keyshare2> keyshares, String userId) {
     if (pairingData == null || keyshares.isEmpty) {
       _signListener = null;
     } else {
-      _signListener = SignListener(pairingData, keyshares, _sharedDatabase, sodium, ctss);
+      _signListener = SignListener(pairingData, userId, keyshares, _sharedDatabase, sodium, ctss);
     }
     return _signListener;
   }
 
-  Stream<SignRequest> signRequests() {
+  Stream<SignRequest> signRequests(String userId) {
     final pairingStream = pairingState.toStream((p) => p.pairingData);
     final keysharesStream = keygenState.toStream((p) => p.keyshares);
     return pairingStream //
-        .combineLatest(keysharesStream, _updateSignListener)
+        .combineLatest(
+          keysharesStream,
+          (pairingData, keyshares) => _updateSignListener(pairingData, keyshares, userId),
+        )
         .map((listener) => listener?.signRequests() ?? const Stream<SignRequest>.empty())
         .switchLatest();
   }
@@ -243,7 +246,7 @@ final class Dart2PartySDK {
 
   late final BackupState backupState = BackupState(localDatabase);
 
-  CancelableOperation<String> fetchRemoteBackup(String accountAddress) {
+  CancelableOperation<String> fetchRemoteBackup(String accountAddress, String userId) {
     if (_state != SdkState.readyToSign) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
     }
@@ -256,7 +259,7 @@ final class Dart2PartySDK {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
     }
 
-    final fetchBackupAction = FetchRemoteBackupAction(_sharedDatabase, pairingData);
+    final fetchBackupAction = FetchRemoteBackupAction(_sharedDatabase, userId);
     final fetchBackupOperation = CancelableOperation.fromFuture(fetchBackupAction.start(), onCancel: fetchBackupAction.cancel);
 
     return fetchBackupOperation.then((remoteBackup) {

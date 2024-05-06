@@ -21,6 +21,7 @@ class SignAction {
 
   final SharedDatabase _sharedDatabase;
   final PairingData _pairingData;
+  final String _userId;
   final Keyshare2 _keyshare;
   final String messageHash;
 
@@ -30,13 +31,14 @@ class SignAction {
   P2SignSession? _p2SignSession;
   StreamSubscription<SignMessage>? _streamSubscription;
 
-  SignAction(this._sodium, this._ctss, this._sharedDatabase, this._pairingData, this._keyshare, this.messageHash);
+  SignAction(this._sodium, this._ctss, this._sharedDatabase, this._pairingData, this._userId, this._keyshare, this.messageHash);
 
   Future<String> start() async {
     _expectedRound = 1;
     _p2SignSession = null;
 
-    _streamSubscription = _sharedDatabase.signUpdates(_pairingData.pairingId).timeout(const Duration(seconds: 60)).listen(_handleMessage, onError: _handleError, cancelOnError: true);
+    _streamSubscription =
+        _sharedDatabase.signUpdates(_userId).timeout(const Duration(seconds: 60)).listen(_handleMessage, onError: _handleError, cancelOnError: true);
 
     return _completer.future;
   }
@@ -48,7 +50,6 @@ class SignAction {
   void _completeWithResult(String result) {
     _streamSubscription?.cancel();
     _completer.complete(result);
-    // _cleanup();
   }
 
   void _completeWithError(Object error) {
@@ -146,7 +147,7 @@ class SignAction {
       message.messageHash,
       true,
     );
-    _sharedDatabase.setSignMessage(_pairingData.pairingId, signMessage2);
+    _sharedDatabase.setSignMessage(_userId, signMessage2);
   }
 
   void _processMessage1(SignMessage message, String payload1) {
@@ -167,6 +168,6 @@ class SignAction {
   void _cleanup() {
     // Delete last message to prevent future signature generation
     // failures over previous locally cached outdated messages
-    _sharedDatabase.deleteSignMessage(_pairingData.pairingId);
+    _sharedDatabase.deleteSignMessage(_userId);
   }
 }

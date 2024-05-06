@@ -21,6 +21,7 @@ class KeygenAction {
 
   final SharedDatabase _sharedDatabase;
   final PairingData _pairingData;
+  final String _userId;
 
   var _expectedRound = 1;
   final _completer = Completer<Keyshare2>();
@@ -28,13 +29,16 @@ class KeygenAction {
   P2KeygenSession? _p2KeygenSession;
   StreamSubscription<KeygenMessage>? _streamSubscription;
 
-  KeygenAction(this._sodium, this._ctss, this._sharedDatabase, this._pairingData);
+  KeygenAction(this._sodium, this._ctss, this._sharedDatabase, this._pairingData, this._userId);
 
   Future<Keyshare2> start() async {
     _expectedRound = 1;
     _p2KeygenSession = null;
 
-    _streamSubscription = _sharedDatabase.keygenUpdates(_pairingData.pairingId).timeout(const Duration(seconds: 60)).listen(_handleMessage, onError: _handleError, cancelOnError: true);
+    _streamSubscription = _sharedDatabase
+        .keygenUpdates(_userId)
+        .timeout(const Duration(seconds: 60))
+        .listen(_handleMessage, onError: _handleError, cancelOnError: true);
 
     return _completer.future;
   }
@@ -58,9 +62,9 @@ class KeygenAction {
   void _handleMessage(KeygenMessage message) {
     if (message.payload.party != 1 || message.payload.round != _expectedRound) return; // ignore own messages and incorrect rounds
 
-    final validationError = _validateMessage(message);
-    if (validationError != null) {
-      return _completeWithError(validationError);
+    final validationResponse = _validateMessage(message);
+    if (!validationResponse) {
+      return;
     }
 
     var (decryptionError, decrypted) = _decryptPayload(message.payload);
@@ -93,25 +97,16 @@ class KeygenAction {
     _completer.completeError(error);
   }
 
-  Error? _validateMessage(KeygenMessage message) {
+  bool _validateMessage(KeygenMessage message) {
     final now = DateTime.now();
-
-    // print('Time');
-    // print(now);
-    // print(now.millisecondsSinceEpoch);
-    // print(message.createdAt);
-    // print(message.createdAt.millisecondsSinceEpoch);
-    // print(now.millisecondsSinceEpoch < message.createdAt.millisecondsSinceEpoch);
-    // print(message.createdAt.add(message.expirationTimeout).toString());
-    // print(message.createdAt.add(message.expirationTimeout).isBefore(now));
 
     // if (now.isAfter(message.createdAt)) {
     //   return StateError('Keygen message on round ${message.payload.round} of party ${message.payload.party} has incorrect creation date');
     // } else
     if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
-      return StateError('Keygen message on round ${message.payload.round} of party ${message.payload.party} expired');
+      return false;
     } else {
-      return null;
+      return true;
     }
   }
 
@@ -148,7 +143,7 @@ class KeygenAction {
       accountId,
       KeygenPayload(encryptedMessage2, nonce, 1, 2),
     );
-    _sharedDatabase.setKeygenMessage(_pairingData.pairingId, keygenMessage2);
+    _sharedDatabase.setKeygenMessage(_userId, keygenMessage2);
   }
 
   void _processMessage3(String message3) {
@@ -159,6 +154,6 @@ class KeygenAction {
   void _cleanup() {
     // Delete last message to prevent future signature generation
     // failures over previous locally cached outdated messages
-    _sharedDatabase.deleteKeygenMessage(_pairingData.pairingId);
+    _sharedDatabase.deleteKeygenMessage(_userId);
   }
 }

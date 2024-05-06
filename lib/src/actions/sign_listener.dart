@@ -22,7 +22,6 @@ import '../utils/rlp/rlp.dart';
 
 final class SignRequest {
   final SignMessage _originalMessage;
-  final String pairingId;
   final int accountId;
   final SignType signType;
   final String hashAlg;
@@ -34,7 +33,7 @@ final class SignRequest {
   final String? messageHash;
   final int? chainId;
 
-  SignRequest._fromMessage(this._originalMessage, this.pairingId, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
+  SignRequest._fromMessage(this._originalMessage, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
       : accountId = _originalMessage.accountId,
         signType = _originalMessage.signMetadata,
         hashAlg = _originalMessage.hashAlg,
@@ -46,16 +45,17 @@ typedef SignRequestApprover = void Function(SignRequest request);
 
 class SignListener {
   final PairingData _pairingData;
+  final String _userId;
   final List<Keyshare2> _keyshares;
   final SharedDatabase _sharedDatabase;
   final Sodium _sodium;
   final CTSSBindings _ctss;
 
-  SignListener(this._pairingData, this._keyshares, this._sharedDatabase, this._sodium, this._ctss);
+  SignListener(this._pairingData, this._userId, this._keyshares, this._sharedDatabase, this._sodium, this._ctss);
 
   Stream<SignRequest> signRequests() {
     return _sharedDatabase
-        .signUpdates(_pairingData.pairingId)
+        .signUpdates(_userId)
         .map(_filter) //
         .whereNotNull()
         .distinct((prev, curr) => prev.sessionId == curr.sessionId)
@@ -63,11 +63,6 @@ class SignListener {
   }
 
   CancelableOperation<String> approve(SignRequest request) {
-    if (request.pairingId != _pairingData.pairingId) {
-      final error = StateError('Incorrect pairingId in sign request');
-      return CancelableOperation.fromFuture(Future.error(error));
-    }
-
     if (request.accountId > _keyshares.length) {
       final error = StateError('Incorrect account index ${request.accountId}, total keyshares: ${_keyshares.length}');
       return CancelableOperation.fromFuture(Future.error(error));
@@ -79,20 +74,19 @@ class SignListener {
     }
 
     final keyshare = _keyshares[request.accountId - 1];
-    final signAction = SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, keyshare, request.messageHash ?? request._originalMessage.messageHash);
+    final signAction =
+        SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, _userId, keyshare, request.messageHash ?? request._originalMessage.messageHash);
 
     return CancelableOperation.fromFuture(signAction.start(), onCancel: signAction.cancel);
   }
 
   void decline(SignRequest request) {
-    if (request.pairingId != _pairingData.pairingId) return;
-
     _sendDeclineMessage(request._originalMessage);
   }
 
   void _sendDeclineMessage(SignMessage message) {
     message.isApproved = false;
-    _sharedDatabase.setSignMessage(_pairingData.pairingId, message);
+    _sharedDatabase.setSignMessage(_userId, message);
   }
 
   bool _validateMessageDate(SignMessage message) {
@@ -144,29 +138,29 @@ class SignListener {
         {
           final (to, value, chainId) = _parseTransaction(message.messageToSign, true);
           final readableMessage = to == null || value == null ? "Cannot decode transaction" : "Ethereum transaction";
-          return SignRequest._fromMessage(message, _pairingData.pairingId, to, value, readableMessage, null, chainId);
+          return SignRequest._fromMessage(message, to, value, readableMessage, null, chainId);
         }
       case SignType.ethTransaction:
         {
           final (to, value, chainId) = _parseTransaction(message.messageToSign, false);
           final messageHash = _ethTransactionHash(message.messageToSign, message.hashAlg);
           final readableMessage = to == null || value == null ? "Cannot decode transaction" : "Ethereum transaction";
-          return SignRequest._fromMessage(message, _pairingData.pairingId, to, value, readableMessage, messageHash, chainId);
+          return SignRequest._fromMessage(message, to, value, readableMessage, messageHash, chainId);
         }
 
       case SignType.ethSign:
         {
           final messageHash = _ethTransactionHash(message.messageToSign, message.hashAlg);
-          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, messageHash, null);
+          return SignRequest._fromMessage(message, null, null, message.messageToSign, messageHash, null);
         }
       case SignType.personalSign:
         {
           final messageHash = _personalSignHash(message.messageToSign, message.hashAlg);
-          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, messageHash, null);
+          return SignRequest._fromMessage(message, null, null, message.messageToSign, messageHash, null);
         }
 
       default:
-        return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.messageToSign, null, null);
+        return SignRequest._fromMessage(message, null, null, message.messageToSign, null, null);
     }
   }
 
