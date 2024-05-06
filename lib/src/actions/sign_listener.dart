@@ -48,7 +48,7 @@ typedef SignRequestApprover = void Function(SignRequest request);
 class SignListener {
   final PairingData _pairingData;
   final String _userId;
-  final List<Keyshare2> _keyshares;
+  final Map<String, List<Keyshare2>> _keyshares;
   final SharedDatabase _sharedDatabase;
   final Sodium _sodium;
   final CTSSBindings _ctss;
@@ -158,16 +158,16 @@ class SignListener {
       case SignType.ethSign:
         {
           final messageHash = _ethTransactionHash(message.signMessage, message.hashAlg);
-          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.signMessage, messageHash, null);
+          return SignRequest._fromMessage(message, null, null, message.signMessage, messageHash, null);
         }
       case SignType.personalSign:
         {
           final messageHash = _personalSignHash(message.signMessage, message.hashAlg);
-          return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.signMessage, messageHash, null);
+          return SignRequest._fromMessage(message, null, null, message.signMessage, messageHash, null);
         }
 
       default:
-        return SignRequest._fromMessage(message, _pairingData.pairingId, null, null, message.signMessage, null, null);
+        return SignRequest._fromMessage(message, null, null, message.signMessage, null, null);
     }
   }
 

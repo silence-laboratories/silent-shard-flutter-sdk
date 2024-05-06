@@ -37,8 +37,10 @@ class SignAction {
     _expectedRound = 1;
     _p2SignSession = null;
 
-    _streamSubscription =
-        _sharedDatabase.signUpdates(_userId).timeout(const Duration(seconds: 60)).listen(_handleMessage, onError: _handleError, cancelOnError: true);
+    _streamSubscription = _sharedDatabase //
+        .signUpdates(_userId)
+        .timeout(const Duration(seconds: 60))
+        .listen(_handleMessage, onError: _handleError, cancelOnError: true);
 
     return _completer.future;
   }
