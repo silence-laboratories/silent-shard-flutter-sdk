@@ -7,7 +7,7 @@ import 'transport.dart';
 import 'messages/pairing_message.dart';
 import 'messages/keygen_message.dart';
 import 'messages/sign_message.dart';
-import 'messages/user_data.dart';
+import '../types/user_data.dart';
 
 class SharedDatabase {
   final Transport _transport;
@@ -52,7 +52,7 @@ class SharedDatabase {
 
   // --- Users ---
 
-  Future<void> setUserData(String userId, UserData data) => _transport.set("users", userId, data.toJson());
+  Future<void> setUserData(String userId, UserData data, bool? mergeData) => _transport.set("users", userId, data.toJson(), mergeData ?? false);
 
   Future<void> deleteUserData(String userId) => _transport.delete("users", userId);
 

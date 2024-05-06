@@ -25,7 +25,7 @@ class TransportMock implements Transport {
   }
 
   @override
-  Future<void> set(String collection, String docId, Map<String, dynamic> data) {
+  Future<void> set(String collection, String docId, Map<String, dynamic> data, [bool? mergeData]) {
     // TODO: implement set
     throw UnimplementedError();
   }

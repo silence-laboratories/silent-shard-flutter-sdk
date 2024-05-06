@@ -8,7 +8,7 @@ abstract interface class Transport {
   Stream<Map<String, dynamic>?> updates(String collection, String docId);
 
   /// Set specific document with [docId] in [collection]
-  Future<void> set(String collection, String docId, Map<String, dynamic> data);
+  Future<void> set(String collection, String docId, Map<String, dynamic> data, [bool mergeData = false]);
 
   /// Delete specific document with [docId] in [collection]
   Future<void> delete(String collection, String docId);

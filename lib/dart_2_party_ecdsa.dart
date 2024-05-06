@@ -29,7 +29,7 @@ import 'src/transport/shared_database.dart';
 import 'src/actions/fetch_remote_backup_action.dart';
 import 'src/actions/sign_listener.dart';
 import 'src/state/backup_state.dart';
-import 'src/transport/messages/user_data.dart';
+import 'src/types/user_data.dart';
 import 'src/types/wallet_backup.dart';
 import 'src/extensions/listenable_stream.dart';
 
@@ -41,6 +41,7 @@ export 'src/types/pairing_data.dart';
 export 'src/types/keyshare.dart';
 export 'src/types/account_backup.dart';
 export 'src/types/wallet_backup.dart';
+export 'src/types/user_data.dart';
 export 'src/actions/sign_listener.dart';
 export 'src/transport/messages/sign_message.dart';
 
@@ -289,6 +290,10 @@ final class Dart2PartySDK {
   // --- Users ---
 
   void updateMessagingToken(String userId, String token) {
-    _sharedDatabase.setUserData(userId, UserData(FCMData(token)));
+    _sharedDatabase.setUserData(userId, UserData(FCMData(token), null), true);
+  }
+
+  Stream<UserData> snapVersionListener(String userId) {
+    return _sharedDatabase.userUpdates(userId);
   }
 }
