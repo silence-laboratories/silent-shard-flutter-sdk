@@ -41,16 +41,26 @@ class LocalDatabase {
 
         final keysharesJson = json['keyshares'];
         if (keysharesJson != null) {
-          keysharesJson.forEach((key, value) {
-            keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
-          });
+          if (keysharesJson is! Map<String, dynamic> && keysharesJson is List<dynamic>) {
+            List<Keyshare2> oldKeyshares = keysharesJson.map<Keyshare2>((e) => Keyshare2.fromBytes(ctss, e)).toList();
+            keyshares['metamask'] = oldKeyshares;
+          } else {
+            keysharesJson.forEach((key, value) {
+              keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
+            });
+          }
         }
 
         final walletBackupJson = json['backup'];
         if (walletBackupJson != null) {
-          walletBackupJson.forEach((key, value) {
-            walletBackup[key] = WalletBackup.fromJson(value);
-          });
+          if (walletBackupJson is! Map<String, dynamic> && walletBackupJson is List<dynamic>) {
+            WalletBackup oldBackup = WalletBackup.fromJson(walletBackupJson);
+            walletBackup['metamask'] = oldBackup;
+          } else {
+            walletBackupJson.forEach((key, value) {
+              walletBackup[key] = WalletBackup.fromJson(value);
+            });
+          }
         }
       } catch (e) {
         print('Failed to load local state: $e');

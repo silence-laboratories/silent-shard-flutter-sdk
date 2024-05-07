@@ -3,7 +3,6 @@
 
 import 'dart:async';
 
-import '../types/pairing_data.dart';
 import '../transport/messages/backup_message.dart';
 import '../transport/shared_database.dart';
 
