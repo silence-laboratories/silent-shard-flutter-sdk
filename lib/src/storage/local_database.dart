@@ -91,7 +91,7 @@ class LocalDatabase {
 
   // --- Keyshares ---
 
-  Map<String, List<Keyshare2>> get keyshares => _keyshares.map((key, value) => MapEntry(key, List<Keyshare2>.unmodifiable(value)));
+  Map<String, List<Keyshare2>> get keyshares => _keyshares.map((key, value) => MapEntry(key, List<Keyshare2>.from(value)));
 
   set keyshares(Map<String, List<Keyshare2>> newKeyshares) {
     _keyshares = Map.of(newKeyshares);
@@ -109,16 +109,23 @@ class LocalDatabase {
 
   void replaceKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
     if (_keyshares.containsKey(walletId)) {
-      _keyshares.remove(walletId);
-      _keyshares[walletId] = List.of(newKeyshares);
+      for (Keyshare2 keyshare in newKeyshares) {
+        final index = _keyshares[walletId]!.indexWhere((element) => element.ethAddress == keyshare.ethAddress);
+        if (index != -1) {
+          _keyshares[walletId]![index] = keyshare;
+        } else {
+          _keyshares[walletId]!.add(keyshare);
+        }
+      }
     } else {
       _keyshares[walletId] = List.of(newKeyshares);
     }
     saveToStorage();
   }
 
-  void removeKeyshareAt(String walletId, int index) {
+  void removeKeyshareBy(String walletId, String address) {
     if (_keyshares.containsKey(walletId)) {
+      final index = _keyshares[walletId]!.indexWhere((element) => element.ethAddress == address);
       _keyshares[walletId]!.removeAt(index);
     }
     saveToStorage();
@@ -138,35 +145,34 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void replaceAccount(String walletId, AccountBackup backup) {
+  void addBackupAccount(String walletId, AccountBackup backup) {
     if (_walletBackups.containsKey(walletId)) {
-      _walletBackups.remove(walletId);
-      _walletBackups[walletId] = WalletBackup([backup]);
+      _walletBackups[walletId]!.addAccount(backup);
     } else {
       _walletBackups[walletId] = WalletBackup([backup]);
     }
     saveToStorage();
   }
 
-  void replaceAccounts(String walletId, Iterable<AccountBackup> backups) {
+  void replaceAllBackupAccounts(String walletId, Iterable<AccountBackup> backups) {
     if (_walletBackups.containsKey(walletId)) {
-      _walletBackups.remove(walletId);
-      _walletBackups[walletId] = WalletBackup(backups);
+      for (AccountBackup backup in backups) {
+        final index = _walletBackups[walletId]!.accounts.indexWhere((element) => element.address == backup.address);
+        if (index != -1) {
+          _walletBackups[walletId]!.setAccount(index, backup);
+        } else {
+          _walletBackups[walletId]!.addAccount(backup);
+        }
+      }
     } else {
       _walletBackups[walletId] = WalletBackup(backups);
     }
     saveToStorage();
   }
 
-  void removeAccount(String walletId, AccountBackup backup) {
+  void removeBackupAccountBy(String walletId, String address) {
     if (_walletBackups.containsKey(walletId)) {
-      _walletBackups[walletId]!.removeAccount(backup);
-    }
-    saveToStorage();
-  }
-
-  void removeAccountAt(String walletId, int index) {
-    if (_walletBackups.containsKey(walletId)) {
+      final index = _walletBackups[walletId]!.accounts.indexWhere((element) => element.address == address);
       _walletBackups[walletId]!.removeAccountAt(index);
     }
     saveToStorage();

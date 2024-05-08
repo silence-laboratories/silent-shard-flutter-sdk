@@ -105,10 +105,10 @@ final class Dart2PartySDK {
     }
   }
 
-  void reset(String walletId) {
+  void reset(String walletId, String address) {
     if (_state == SdkState.loaded) throw StateError('Cannot cleanup SDK in $_state state');
-    deleteBackup(walletId);
-    deleteKeyshares(walletId);
+    deleteBackup(walletId, address);
+    deleteKeyshare(walletId, address);
     unpairIfNoKeyshares();
   }
 
@@ -157,7 +157,7 @@ final class Dart2PartySDK {
     return _pairingOperation!;
   }
 
-  CancelableOperation<PairingData> startRePairing(QRMessage message, String userId) {
+  CancelableOperation<PairingData> startRePairing(QRMessage message, String address, String userId) {
     if (_state != SdkState.readyToSign) CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK in $_state state')));
 
     final walletBackup = backupState.walletBackupMap[message.walletId];
@@ -168,10 +168,12 @@ final class Dart2PartySDK {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK without remote backup data')));
     }
 
+    final accounts = walletBackup.accounts.where((e) => e.address == address).toList();
+    final repairBackup = WalletBackup(accounts);
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
 
     _pairingOperation = CancelableOperation.fromFuture(
-      pairingAction.start(walletBackup.combinedRemoteData),
+      pairingAction.start(repairBackup.combinedRemoteData),
       onCancel: pairingAction.cancel,
     ).then((pairingData) {
       // TODO: invalidate old sign listener
@@ -214,9 +216,9 @@ final class Dart2PartySDK {
     });
   }
 
-  void deleteKeyshares(walletId) {
+  void deleteKeyshare(String walletId, String address) {
     if (_state != SdkState.readyToSign && _state != SdkState.initialized) return;
-    keygenState.removeAllKeyshares(walletId);
+    keygenState.removeKeyshareBy(walletId, address);
     _state = SdkState.paired;
   }
 
@@ -269,7 +271,7 @@ final class Dart2PartySDK {
 
     return fetchBackupOperation.then((remoteBackup) {
       final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.replaceAccount("metamask", accountBackup);
+      backupState.addBackupAccount("metamask", accountBackup);
       return remoteBackup;
     });
   }
@@ -295,7 +297,7 @@ final class Dart2PartySDK {
     return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
       if (remoteBackup.backupData.isNotEmpty && remoteBackup.isBackedUp) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
-        backupState.replaceAccount(walletId, accountBackup);
+        backupState.addBackupAccount(walletId, accountBackup);
         _sharedDatabase.setBackupMessage(
             pairingData.pairingId,
             BackupMessage(
@@ -313,9 +315,9 @@ final class Dart2PartySDK {
     });
   }
 
-  void deleteBackup(String walletId) {
+  void deleteBackup(String walletId, String address) {
     if (_state == SdkState.loaded) throw StateError('Cannot delete backup when SDK in $_state state');
-    backupState.clearAccounts(walletId);
+    backupState.removeBackupAccountBy(walletId, address);
   }
 
   CancelableOperation<WalletBackup> walletBackup(String walletId) {
