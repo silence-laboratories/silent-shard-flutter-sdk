@@ -33,6 +33,7 @@ final class SignRequest {
   final String? messageHash;
   final int? chainId;
   final String? walletId;
+  final String from;
 
   SignRequest._fromMessage(this._originalMessage, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
       : accountId = _originalMessage.accountId,
@@ -40,7 +41,15 @@ final class SignRequest {
         hashAlg = _originalMessage.hashAlg,
         message = _originalMessage.payload.message,
         walletId = _originalMessage.walletId,
+        from = _ethAddress(_originalMessage.publicKey),
         createdAt = _originalMessage.createdAt;
+
+  static String _ethAddress(String publicKey) {
+    Uint8List publicKeyByte = Uint8List.fromList(hex.decode(publicKey));
+    final hash = keccak256.convert(publicKeyByte);
+    final addressBytes = hash.buffer.asUint8List(12, 20);
+    return '0x${hex.encode(addressBytes)}';
+  }
 }
 
 typedef SignRequestApprover = void Function(SignRequest request);
@@ -79,8 +88,8 @@ class SignListener {
       final error = StateError('No keyshares for wallet ${request.walletId}');
       return CancelableOperation.fromFuture(Future.error(error));
     }
-
-    final keyshare = _keyshares[request.walletId]![request.accountId - 1];
+    final address = request.from;
+    final keyshare = _keyshares[request.walletId]!.firstWhere((element) => element.ethAddress == address);
     final signAction =
         SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, _userId, keyshare, request.messageHash ?? request._originalMessage.messageHash);
 
