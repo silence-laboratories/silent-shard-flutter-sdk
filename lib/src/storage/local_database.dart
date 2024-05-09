@@ -107,7 +107,7 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void replaceKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
+  void upsertKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
     if (_keyshares.containsKey(walletId)) {
       for (Keyshare2 keyshare in newKeyshares) {
         final index = _keyshares[walletId]!.indexWhere((element) => element.ethAddress == keyshare.ethAddress);
@@ -145,16 +145,21 @@ class LocalDatabase {
     saveToStorage();
   }
 
-  void addBackupAccount(String walletId, AccountBackup backup) {
+  void upsertBackupAccount(String walletId, AccountBackup backup) {
     if (_walletBackups.containsKey(walletId)) {
-      _walletBackups[walletId]!.addAccount(backup);
+      final index = _walletBackups[walletId]!.accounts.indexWhere((element) => element.address == backup.address);
+      if (index != -1) {
+        _walletBackups[walletId]!.setAccount(index, backup);
+      } else {
+        _walletBackups[walletId]!.addAccount(backup);
+      }
     } else {
       _walletBackups[walletId] = WalletBackup([backup]);
     }
     saveToStorage();
   }
 
-  void replaceAllBackupAccounts(String walletId, Iterable<AccountBackup> backups) {
+  void upsertBackupAccounts(String walletId, Iterable<AccountBackup> backups) {
     if (_walletBackups.containsKey(walletId)) {
       for (AccountBackup backup in backups) {
         final index = _walletBackups[walletId]!.accounts.indexWhere((element) => element.address == backup.address);

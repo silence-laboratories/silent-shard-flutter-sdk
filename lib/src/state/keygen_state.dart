@@ -23,8 +23,8 @@ class KeygenState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void replaceKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
-    _database.replaceKeyshares(walletId, newKeyshares);
+  void upsertKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
+    _database.upsertKeyshares(walletId, newKeyshares);
     notifyListeners();
   }
 

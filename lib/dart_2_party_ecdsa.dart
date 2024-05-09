@@ -137,8 +137,8 @@ final class Dart2PartySDK {
       if (walletBackup != null) {
         try {
           List<Keyshare2> keyshareList = walletBackup.accounts.map((accountBackup) => Keyshare2.fromBytes(ctss, accountBackup.keyshareData)).toList();
-          keygenState.replaceKeyshares(walletId, keyshareList);
-          backupState.replaceAccounts(walletId, walletBackup.accounts);
+          keygenState.upsertKeyshares(walletId, keyshareList);
+          backupState.upsertBackupAccounts(walletId, walletBackup.accounts);
 
           _state = SdkState.readyToSign;
         } catch (error) {
@@ -271,7 +271,7 @@ final class Dart2PartySDK {
 
     return fetchBackupOperation.then((remoteBackup) {
       final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.addBackupAccount("metamask", accountBackup);
+      backupState.upsertBackupAccount("metamask", accountBackup);
       return remoteBackup;
     });
   }
@@ -297,7 +297,7 @@ final class Dart2PartySDK {
     return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
       if (remoteBackup.backupData.isNotEmpty && remoteBackup.isBackedUp) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
-        backupState.addBackupAccount(walletId, accountBackup);
+        backupState.upsertBackupAccount(walletId, accountBackup);
         _sharedDatabase.setBackupMessage(
             pairingData.pairingId,
             BackupMessage(
