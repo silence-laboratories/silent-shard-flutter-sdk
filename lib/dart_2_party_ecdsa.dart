@@ -47,6 +47,8 @@ export 'src/actions/sign_listener.dart';
 export 'src/transport/messages/sign_message.dart';
 export 'src/transport/messages/backup_message.dart';
 
+const METAMASK_WALLET_ID = 'metamask';
+
 enum SdkState {
   loaded,
   initialized,
@@ -262,7 +264,7 @@ final class Dart2PartySDK {
     }
     final pairingData = pairingState.pairingData;
     if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
-    final keyshare = keygenState.keysharesMap["metamask"]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+    final keyshare = keygenState.keysharesMap[METAMASK_WALLET_ID]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
     if (keyshare == null) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
     }
@@ -271,12 +273,12 @@ final class Dart2PartySDK {
 
     return fetchBackupOperation.then((remoteBackup) {
       final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.upsertBackupAccount("metamask", accountBackup);
+      backupState.upsertBackupAccount(METAMASK_WALLET_ID, accountBackup);
       return remoteBackup;
     });
   }
 
-  Stream<BackupMessage> listenRemoteBackup(String accountAddress, String userId, {String walletId = "metamask"}) {
+  Stream<BackupMessage> listenRemoteBackup(String accountAddress, String userId, {String walletId = METAMASK_WALLET_ID}) {
     if (_state != SdkState.readyToSign) {
       throw StateError('Cannot start backup when SDK in $_state state');
     }
@@ -327,7 +329,10 @@ final class Dart2PartySDK {
     if (keyshares == null || keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
     final walletBackup = backupState.walletBackupMap[walletId];
     if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletId')));
-    assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
+
+    if (walletId == METAMASK_WALLET_ID) {
+      assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
+    }
 
     return CancelableOperation.fromValue(walletBackup);
   }
