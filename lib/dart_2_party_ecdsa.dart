@@ -322,7 +322,7 @@ final class Dart2PartySDK {
     backupState.removeBackupAccountBy(walletId, address);
   }
 
-  CancelableOperation<WalletBackup> walletBackup(String walletId) {
+  CancelableOperation<WalletBackup> walletBackup(String walletId, String address) {
     if (_state != SdkState.readyToSign) CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
 
     final keyshares = keygenState.keysharesMap[walletId];
@@ -334,7 +334,13 @@ final class Dart2PartySDK {
       assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
     }
 
-    return CancelableOperation.fromValue(walletBackup);
+    final backupAccounts = walletBackup.accounts.where((accountBackup) {
+      return accountBackup.address == address;
+    });
+
+    final fetchedWalletBackup = WalletBackup(backupAccounts);
+
+    return CancelableOperation.fromValue(fetchedWalletBackup);
   }
 
   // --- Users ---
