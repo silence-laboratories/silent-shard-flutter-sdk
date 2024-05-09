@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:dart_2_party_ecdsa/dart_2_party_ecdsa.dart';
+import 'package:dart_2_party_ecdsa/src/storage/migration.dart';
 import 'package:sodium/sodium.dart';
 
 import 'storage.dart';
@@ -27,10 +28,34 @@ class LocalDatabase {
   // --- Serialization / Deserialization ---
 
   factory LocalDatabase.fromStorage(Sodium sodium, CTSSBindings ctss, Storage storage) {
+    final data = storage.getString(storageKey);
+    if (data != null) {
+      try {
+        final json = jsonDecode(data);
+        var version = json['version'] ?? 0;
+        var migrated = false;
+        Map<String, dynamic> migratedJson = {};
+
+        if (version < 1) {
+          migratedJson = migrateFromV0ToV1(ctss, json['keyshares'], json['backup']);
+          migrated = true;
+        }
+
+        if (migrated) {
+          saveMigration(migratedJson, storage);
+        }
+        return deserializeStorage(sodium, ctss, storage);
+      } catch (e) {
+        print('Failed to load local state: $e');
+      }
+    }
+    return LocalDatabase(storage, null, {}, {}, false);
+  }
+
+  static LocalDatabase deserializeStorage(Sodium sodium, CTSSBindings ctss, Storage storage) {
     PairingData? pairingData;
     Map<String, List<Keyshare2>> keyshares = {};
     Map<String, WalletBackup> walletBackup = {};
-
     final data = storage.getString(storageKey);
     if (data != null) {
       try {
@@ -41,32 +66,21 @@ class LocalDatabase {
 
         final keysharesJson = json['keyshares'];
         if (keysharesJson != null) {
-          if (keysharesJson is! Map<String, dynamic> && keysharesJson is List<dynamic>) {
-            List<Keyshare2> oldKeyshares = keysharesJson.map<Keyshare2>((e) => Keyshare2.fromBytes(ctss, e)).toList();
-            keyshares[METAMASK_WALLET_ID] = oldKeyshares;
-          } else {
-            keysharesJson.forEach((key, value) {
-              keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
-            });
-          }
+          keysharesJson.forEach((key, value) {
+            keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
+          });
         }
 
         final walletBackupJson = json['backup'];
         if (walletBackupJson != null) {
-          if (walletBackupJson is! Map<String, dynamic> && walletBackupJson is List<dynamic>) {
-            WalletBackup oldBackup = WalletBackup.fromJson(walletBackupJson);
-            walletBackup[METAMASK_WALLET_ID] = oldBackup;
-          } else {
-            walletBackupJson.forEach((key, value) {
-              walletBackup[key] = WalletBackup.fromJson(value);
-            });
-          }
+          walletBackupJson.forEach((key, value) {
+            walletBackup[key] = WalletBackup.fromJson(value);
+          });
         }
       } catch (e) {
-        print('Failed to load local state: $e');
+        rethrow;
       }
     }
-
     return LocalDatabase(storage, pairingData, keyshares, walletBackup, false);
   }
 
@@ -78,6 +92,11 @@ class LocalDatabase {
     };
     print('Saving to storage: $json');
     _storage.setString(storageKey, jsonEncode(json));
+  }
+
+  static void saveMigration(Map<String, dynamic> json, Storage storage) {
+    print('Saving migration to storage: $json');
+    storage.setString(storageKey, jsonEncode(json));
   }
 
   // --- Pairing Data ---
@@ -127,6 +146,9 @@ class LocalDatabase {
     if (_keyshares.containsKey(walletId)) {
       final index = _keyshares[walletId]!.indexWhere((element) => element.ethAddress == address);
       _keyshares[walletId]!.removeAt(index);
+      if (_keyshares[walletId]!.isEmpty) {
+        _keyshares.remove(walletId);
+      }
     }
     saveToStorage();
   }
@@ -179,6 +201,9 @@ class LocalDatabase {
     if (_walletBackups.containsKey(walletId)) {
       final index = _walletBackups[walletId]!.accounts.indexWhere((element) => element.address == address);
       _walletBackups[walletId]!.removeAccountAt(index);
+      if (_walletBackups[walletId]!.accounts.isEmpty) {
+        _walletBackups.remove(walletId);
+      }
     }
     saveToStorage();
   }
