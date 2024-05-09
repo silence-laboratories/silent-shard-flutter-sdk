@@ -43,7 +43,7 @@ class LocalDatabase {
         if (keysharesJson != null) {
           if (keysharesJson is! Map<String, dynamic> && keysharesJson is List<dynamic>) {
             List<Keyshare2> oldKeyshares = keysharesJson.map<Keyshare2>((e) => Keyshare2.fromBytes(ctss, e)).toList();
-            keyshares['metamask'] = oldKeyshares;
+            keyshares[METAMASK_WALLET_ID] = oldKeyshares;
           } else {
             keysharesJson.forEach((key, value) {
               keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
@@ -55,7 +55,7 @@ class LocalDatabase {
         if (walletBackupJson != null) {
           if (walletBackupJson is! Map<String, dynamic> && walletBackupJson is List<dynamic>) {
             WalletBackup oldBackup = WalletBackup.fromJson(walletBackupJson);
-            walletBackup['metamask'] = oldBackup;
+            walletBackup[METAMASK_WALLET_ID] = oldBackup;
           } else {
             walletBackupJson.forEach((key, value) {
               walletBackup[key] = WalletBackup.fromJson(value);

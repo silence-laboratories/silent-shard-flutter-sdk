@@ -1,6 +1,8 @@
 // Copyright (c) Silence Laboratories Pte. Ltd.
 // This software is licensed under the Silence Laboratories License Agreement.
 
+import 'package:dart_2_party_ecdsa/dart_2_party_ecdsa.dart';
+
 final class SignPayload {
   final String message;
   final String nonce;
@@ -112,7 +114,7 @@ final class SignMessage {
       signMessage: json['signMessage'],
       messageHash: json['messageHash'],
       isApproved: json['isApproved'],
-      walletId: json['walletId'] ?? "metamask",
+      walletId: json['walletId'] ?? METAMASK_WALLET_ID,
       expirationTimeout: expirationTimeout,
       created: createdAt,
     );
@@ -130,6 +132,6 @@ final class SignMessage {
         'isApproved': isApproved ?? false,
         'expiry': expirationTimeout.inMilliseconds,
         'createdAt': createdAt.millisecondsSinceEpoch,
-        'walletId': walletId ?? "metamask"
+        'walletId': walletId ?? METAMASK_WALLET_ID
       };
 }
