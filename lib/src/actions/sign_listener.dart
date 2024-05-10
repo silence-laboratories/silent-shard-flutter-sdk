@@ -32,13 +32,24 @@ final class SignRequest {
   final DateTime createdAt;
   final String? messageHash;
   final int? chainId;
+  final String? walletId;
+  final String from;
 
   SignRequest._fromMessage(this._originalMessage, this.to, this.value, this.readableMessage, this.messageHash, this.chainId)
       : accountId = _originalMessage.accountId,
         signType = _originalMessage.signMetadata,
         hashAlg = _originalMessage.hashAlg,
         message = _originalMessage.payload.message,
+        walletId = _originalMessage.walletId,
+        from = _ethAddress(_originalMessage.publicKey),
         createdAt = _originalMessage.createdAt;
+
+  static String _ethAddress(String publicKey) {
+    Uint8List publicKeyByte = Uint8List.fromList(hex.decode(publicKey));
+    final hash = keccak256.convert(publicKeyByte);
+    final addressBytes = hash.buffer.asUint8List(12, 20);
+    return '0x${hex.encode(addressBytes)}';
+  }
 }
 
 typedef SignRequestApprover = void Function(SignRequest request);
@@ -46,7 +57,7 @@ typedef SignRequestApprover = void Function(SignRequest request);
 class SignListener {
   final PairingData _pairingData;
   final String _userId;
-  final List<Keyshare2> _keyshares;
+  final Map<String, List<Keyshare2>> _keyshares;
   final SharedDatabase _sharedDatabase;
   final Sodium _sodium;
   final CTSSBindings _ctss;
@@ -73,7 +84,12 @@ class SignListener {
       return CancelableOperation.fromFuture(Future.error(error));
     }
 
-    final keyshare = _keyshares[request.accountId - 1];
+    if (_keyshares[request.walletId] == null) {
+      final error = StateError('No keyshares for wallet ${request.walletId}');
+      return CancelableOperation.fromFuture(Future.error(error));
+    }
+    final address = request.from;
+    final keyshare = _keyshares[request.walletId]!.firstWhere((element) => element.ethAddress == address);
     final signAction =
         SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, _userId, keyshare, request.messageHash ?? request._originalMessage.messageHash);
 
@@ -117,8 +133,8 @@ class SignListener {
 
   SignMessage? _filter(SignMessage message) {
     if (message.payload.party != 1 || message.payload.round != 1 || message.isApproved != null) return null;
-
-    if (message.accountId > _keyshares.length || !_validateMessageDate(message)) {
+    if (_keyshares[message.walletId] == null) return null;
+    if (message.accountId > _keyshares[message.walletId]!.length || !_validateMessageDate(message)) {
       _sendDeclineMessage(message);
       return null;
     }
@@ -136,48 +152,48 @@ class SignListener {
     switch (message.signMetadata) {
       case SignType.legacyTransaction:
         {
-          final (to, value, chainId) = _parseTransaction(message.messageToSign, true);
+          final (to, value, chainId) = _parseTransaction(message.signMessage, true);
           final readableMessage = to == null || value == null ? "Cannot decode transaction" : "Ethereum transaction";
           return SignRequest._fromMessage(message, to, value, readableMessage, null, chainId);
         }
       case SignType.ethTransaction:
         {
-          final (to, value, chainId) = _parseTransaction(message.messageToSign, false);
-          final messageHash = _ethTransactionHash(message.messageToSign, message.hashAlg);
+          final (to, value, chainId) = _parseTransaction(message.signMessage, false);
+          final messageHash = _ethTransactionHash(message.signMessage, message.hashAlg);
           final readableMessage = to == null || value == null ? "Cannot decode transaction" : "Ethereum transaction";
           return SignRequest._fromMessage(message, to, value, readableMessage, messageHash, chainId);
         }
 
       case SignType.ethSign:
         {
-          final messageHash = _ethTransactionHash(message.messageToSign, message.hashAlg);
-          return SignRequest._fromMessage(message, null, null, message.messageToSign, messageHash, null);
+          final messageHash = _ethTransactionHash(message.signMessage, message.hashAlg);
+          return SignRequest._fromMessage(message, null, null, message.signMessage, messageHash, null);
         }
       case SignType.personalSign:
         {
-          final messageHash = _personalSignHash(message.messageToSign, message.hashAlg);
-          return SignRequest._fromMessage(message, null, null, message.messageToSign, messageHash, null);
+          final messageHash = _personalSignHash(message.signMessage, message.hashAlg);
+          return SignRequest._fromMessage(message, null, null, message.signMessage, messageHash, null);
         }
 
       default:
-        return SignRequest._fromMessage(message, null, null, message.messageToSign, null, null);
+        return SignRequest._fromMessage(message, null, null, message.signMessage, null, null);
     }
   }
 
-  String? _personalSignHash(String messageToSign, String hashAlg) {
+  String? _personalSignHash(String signMessage, String hashAlg) {
     if (hashAlg != 'keccak256') throw StateError('Invalid hash algorithm');
 
-    Uint8List messageToSignBytes = Uint8List.fromList(hex.decode(messageToSign));
+    Uint8List messageToSignBytes = Uint8List.fromList(hex.decode(signMessage));
     final prefix = '\u0019Ethereum Signed Message:\n${messageToSignBytes.length}';
     Uint8List prefixBytes = utf8.encode(prefix);
     final hash = keccak256.convert(prefixBytes + messageToSignBytes);
     return hash.hex();
   }
 
-  String? _ethTransactionHash(String messageToSign, String hashAlg) {
+  String? _ethTransactionHash(String signMessage, String hashAlg) {
     if (hashAlg != 'keccak256') throw StateError('Invalid hash algorithm');
 
-    Uint8List messageToSignBytes = Uint8List.fromList(hex.decode(messageToSign));
+    Uint8List messageToSignBytes = Uint8List.fromList(hex.decode(signMessage));
     final hash = keccak256.convert(messageToSignBytes);
     return hash.hex();
   }

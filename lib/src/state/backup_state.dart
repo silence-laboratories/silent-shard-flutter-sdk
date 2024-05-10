@@ -12,35 +12,30 @@ class BackupState extends ChangeNotifier {
 
   BackupState(this._database);
 
-  WalletBackup get walletBackup => _database.walletBackup;
+  Map<String, WalletBackup> get walletBackupMap => _database.walletBackups;
 
-  set walletBackup(WalletBackup? backup) {
-    _database.walletBackup = backup;
+  set walletBackupMap(Map<String, WalletBackup> backups) {
+    _database.walletBackups = backups;
     notifyListeners();
   }
 
-  void addAccount(AccountBackup backup) {
-    _database.walletBackup = walletBackup..addAccount(backup);
+  void upsertBackupAccount(String walletId, AccountBackup backup) {
+    _database.upsertBackupAccount(walletId, backup);
     notifyListeners();
   }
 
-  void addAccounts(Iterable<AccountBackup> backups) {
-    _database.walletBackup = walletBackup..addAccounts(backups);
+  void upsertBackupAccounts(String walletId, Iterable<AccountBackup> backups) {
+    _database.upsertBackupAccounts(walletId, backups);
     notifyListeners();
   }
 
-  void removeAccount(AccountBackup backup) {
-    _database.walletBackup = walletBackup..removeAccount(backup);
+  void removeBackupAccountBy(String walletId, String address) {
+    _database.removeBackupAccountBy(walletId, address);
     notifyListeners();
   }
 
-  void removeAccountAt(int index) {
-    _database.walletBackup = walletBackup..removeAccountAt(index);
-    notifyListeners();
-  }
-
-  void clearAccounts() {
-    _database.walletBackup = walletBackup..clearAccounts();
+  void clearAccounts(String walletId) {
+    _database.removeAllBackups(walletId);
     notifyListeners();
   }
 }

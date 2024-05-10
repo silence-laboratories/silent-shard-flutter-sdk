@@ -11,30 +11,30 @@ class KeygenState extends ChangeNotifier {
 
   KeygenState(this._database);
 
-  List<Keyshare2> get keyshares => _database.keyshares;
+  Map<String, List<Keyshare2>> get keysharesMap => _database.keyshares;
 
-  set keyshares(Iterable<Keyshare2> keyshares) {
+  set keysharesMap(Map<String, List<Keyshare2>> keyshares) {
     _database.keyshares = keyshares;
     notifyListeners();
   }
 
-  void addKeyshare(Keyshare2 newKeyshare) {
-    _database.addKeyshare(newKeyshare);
+  void addKeyshare(String walletId, Keyshare2 newKeyshare) {
+    _database.addKeyshare(walletId, newKeyshare);
     notifyListeners();
   }
 
-  void addKeyshares(Iterable<Keyshare2> newKeyshares) {
-    _database.addKeyshares(newKeyshares);
+  void upsertKeyshares(String walletId, Iterable<Keyshare2> newKeyshares) {
+    _database.upsertKeyshares(walletId, newKeyshares);
     notifyListeners();
   }
 
-  void removeKeyshareAt(int index) {
-    _database.removeKeyshareAt(index);
+  void removeKeyshareBy(String walletId, String address) {
+    _database.removeKeyshareBy(walletId, address);
     notifyListeners();
   }
 
-  void removeAllKeyshares() {
-    _database.removeAllKeyshares();
+  void removeAllKeyshares(String walletId) {
+    _database.removeAllKeyshares(walletId);
     notifyListeners();
   }
 }

@@ -9,7 +9,7 @@ import 'rlp_utils.dart' show intToBuffer, isHexString, padToEven, stripHexPrefix
 //best-effort basis.
 
 Uint8List encode(dynamic input) {
-  if (input is List && !(input is Uint8List)) {
+  if (input is List && (input is! Uint8List)) {
     final output = <Uint8List>[];
     for (var data in input) {
       output.add(encode(data));
@@ -57,7 +57,7 @@ class Decoded {
 }
 
 dynamic decode(Uint8List? input, [bool stream = false]) {
-  if (input == null || input?.length == 0) {
+  if (input == null || input.isEmpty) {
     return <dynamic>[];
   }
 
@@ -106,7 +106,7 @@ Decoded _decode(Uint8List input) {
     List<dynamic> decoded = <dynamic>[];
     int length = firstByte - 0xbf;
     Uint8List innerRemainder = input.sublist(1, length);
-    while (innerRemainder.length > 0) {
+    while (innerRemainder.isNotEmpty) {
       Decoded d = _decode(innerRemainder);
       decoded.add(d.data);
       innerRemainder = d.remainder;
@@ -124,11 +124,11 @@ Decoded _decode(Uint8List input) {
     }
 
     Uint8List innerRemainder = input.sublist(llength, totalLength);
-    if (innerRemainder.length == 0) {
+    if (innerRemainder.isEmpty) {
       throw const FormatException('invalid rlp, List has a invalid length');
     }
 
-    while (innerRemainder.length > 0) {
+    while (innerRemainder.isNotEmpty) {
       Decoded d = _decode(innerRemainder);
       decoded.add(d.data);
       innerRemainder = d.remainder;

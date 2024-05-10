@@ -37,3 +37,14 @@ class FetchRemoteBackupAction {
     _completer.completeError(error);
   }
 }
+
+class RemoteBackupListener {
+  final SharedDatabase _sharedDatabase;
+  final String _userId;
+
+  RemoteBackupListener(this._sharedDatabase, this._userId);
+
+  Stream<BackupMessage> remoteBackupRequests() {
+    return _sharedDatabase.backupUpdates(_userId);
+  }
+}
