@@ -32,20 +32,16 @@ class LocalDatabase {
     final data = storage.getString(storageKey);
     if (data != null) {
       try {
-        final json = jsonDecode(data);
+        var json = jsonDecode(data);
         var version = json['version'] ?? 0;
-        var migrated = false;
-        Map<String, dynamic> migratedJson = {};
 
         if (version < 1) {
-          migratedJson = migrateFromV0ToV1(ctss, json['keyshares'], json['backup']);
-          migrated = true;
+          var migratedJson = migrateFromV0ToV1(ctss, json['keyshares'], json['backup']);
+          json['keyshares'] = migratedJson['keyshares'];
+          json['backup'] = migratedJson['backup'];
         }
 
-        if (migrated) {
-          saveMigration(migratedJson, storage);
-        }
-        return deserializeStorage(sodium, ctss, storage);
+        return deserializeStorage(sodium, ctss, storage, json);
       } catch (e) {
         print('Failed to load local state: $e');
       }
@@ -53,34 +49,30 @@ class LocalDatabase {
     return LocalDatabase(storage, null, {}, {}, false);
   }
 
-  static LocalDatabase deserializeStorage(Sodium sodium, CTSSBindings ctss, Storage storage) {
+  static LocalDatabase deserializeStorage(Sodium sodium, CTSSBindings ctss, Storage storage, Map<String, dynamic> json) {
     PairingData? pairingData;
     Map<String, List<Keyshare2>> keyshares = {};
     Map<String, WalletBackup> walletBackup = {};
-    final data = storage.getString(storageKey);
-    if (data != null) {
-      try {
-        final json = jsonDecode(data);
-        if (json['pairingData'] != null) {
-          pairingData = PairingData.fromJson(sodium, json['pairingData']);
-        }
-
-        final keysharesJson = json['keyshares'];
-        if (keysharesJson != null) {
-          keysharesJson.forEach((key, value) {
-            keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
-          });
-        }
-
-        final walletBackupJson = json['backup'];
-        if (walletBackupJson != null) {
-          walletBackupJson.forEach((key, value) {
-            walletBackup[key] = WalletBackup.fromJson(value);
-          });
-        }
-      } catch (e) {
-        rethrow;
+    try {
+      if (json['pairingData'] != null) {
+        pairingData = PairingData.fromJson(sodium, json['pairingData']);
       }
+
+      final keysharesJson = json['keyshares'];
+      if (keysharesJson != null) {
+        keysharesJson.forEach((key, value) {
+          keyshares[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
+        });
+      }
+
+      final walletBackupJson = json['backup'];
+      if (walletBackupJson != null) {
+        walletBackupJson.forEach((key, value) {
+          walletBackup[key] = WalletBackup.fromJson(value);
+        });
+      }
+    } catch (e) {
+      rethrow;
     }
     return LocalDatabase(storage, pairingData, keyshares, walletBackup, false);
   }
@@ -94,11 +86,6 @@ class LocalDatabase {
     };
     print('Saving to storage: $json');
     _storage.setString(storageKey, jsonEncode(json));
-  }
-
-  static void saveMigration(Map<String, dynamic> json, Storage storage) {
-    print('Saving migration to storage: $json');
-    storage.setString(storageKey, jsonEncode(json));
   }
 
   // --- Pairing Data ---
