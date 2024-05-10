@@ -12,6 +12,7 @@ import '../ctss_bindings_generated.dart';
 
 class LocalDatabase {
   static const storageKey = "silentshard.storage";
+  static const currentVersion = 1;
 
   Storage _storage;
 
@@ -89,6 +90,7 @@ class LocalDatabase {
       'pairingData': _pairingData?.toJson(),
       'keyshares': _keyshares.map((key, value) => MapEntry(key, value.map((e) => e.toBytes()).toList())),
       'backup': _walletBackups.map((key, value) => MapEntry(key, value.toJson())),
+      'version': currentVersion
     };
     print('Saving to storage: $json');
     _storage.setString(storageKey, jsonEncode(json));

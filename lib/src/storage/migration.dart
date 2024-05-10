@@ -17,7 +17,7 @@ Map<String, dynamic> migrateFromV0ToV1(CTSSBindings ctss, dynamic keysharesJson,
 
   return {
     'keyshares': keyshares.map((key, value) => MapEntry(key, value.map((e) => e.toBytes()).toList())),
-    'backups': walletBackups.map((key, value) => MapEntry(key, value.toJson())),
+    'backup': walletBackups.map((key, value) => MapEntry(key, value.toJson())),
     'version': 1
   };
 }
