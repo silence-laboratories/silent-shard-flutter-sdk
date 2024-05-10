@@ -34,11 +34,15 @@ class LocalDatabase {
       try {
         var json = jsonDecode(data);
         var version = json['version'] ?? 0;
+        bool migrated = false;
 
         if (version < 1) {
-          var migratedJson = migrateFromV0ToV1(ctss, json['keyshares'], json['backup']);
-          json['keyshares'] = migratedJson['keyshares'];
-          json['backup'] = migratedJson['backup'];
+          json = migrateFromV0ToV1(ctss, json);
+          migrated = true;
+        }
+
+        if (migrated) {
+          storage.setString(storageKey, jsonEncode(json));
         }
 
         return deserializeStorage(sodium, ctss, storage, json);
