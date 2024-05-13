@@ -12,7 +12,7 @@ class BackupState extends ChangeNotifier {
 
   BackupState(this._database);
 
-  Map<String, WalletBackup> get walletBackupMap => _database.walletBackups;
+  Map<String, WalletBackup> get walletBackupsMap => _database.walletBackupsMap;
 
   set walletBackupMap(Map<String, WalletBackup> backups) {
     _database.walletBackups = backups;

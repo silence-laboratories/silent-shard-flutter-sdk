@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
+import 'package:dart_2_party_ecdsa/src/utils/utils.dart';
 import 'package:sodium/sodium.dart';
 
 import '../ctss_bindings_generated.dart';
@@ -20,7 +21,7 @@ class SignAction {
   final CTSSBindings _ctss;
 
   final SharedDatabase _sharedDatabase;
-  final PairingData _pairingData;
+  final Map<String, PairingData> _pairingData;
   final String _userId;
   final Keyshare2 _keyshare;
   final String messageHash;
@@ -68,7 +69,7 @@ class SignAction {
       return _completeWithError(validationError);
     }
 
-    var (decryptionError, decrypted) = _decryptPayload(message.payload);
+    var (decryptionError, decrypted) = _decryptPayload(pubKeyToEthAddress(message.publicKey), message.payload);
     if (decryptionError != null) {
       return _completeWithError(decryptionError);
     }
@@ -111,13 +112,16 @@ class SignAction {
     }
   }
 
-  (Object?, String?) _decryptPayload(SignPayload payload) {
+  (Object?, String?) _decryptPayload(String address, SignPayload payload) {
     try {
+      if (_pairingData[address] == null) {
+        throw (StateError('No pairing data for address $address'), null);
+      }
       final plainText = _sodium.crypto.box.openEasy(
         cipherText: base64.decode(payload.message),
         nonce: Uint8List.fromList(hex.decode(payload.nonce)),
-        publicKey: _pairingData.webPublicKey,
-        secretKey: _pairingData.encKeyPair.secretKey,
+        publicKey: _pairingData[address]!.webPublicKey,
+        secretKey: _pairingData[address]!.encKeyPair.secretKey,
       );
       return (null, utf8.decode(plainText));
     } catch (e) {
@@ -125,19 +129,22 @@ class SignAction {
     }
   }
 
-  (String, String) _encryptPayload(String message) {
+  (String, String) _encryptPayload(String address, String message) {
+    if (_pairingData[address] == null) {
+      throw StateError('No pairing data for address $address');
+    }
     final nonce = _sodium.randombytes.buf(_sodium.crypto.box.nonceBytes);
     final encryptedMessageBytes = _sodium.crypto.box.easy(
       message: Uint8List.fromList(message.codeUnits),
       nonce: nonce,
-      publicKey: _pairingData.webPublicKey,
-      secretKey: _pairingData.encKeyPair.secretKey,
+      publicKey: _pairingData[address]!.webPublicKey,
+      secretKey: _pairingData[address]!.encKeyPair.secretKey,
     );
     return (base64Encode(encryptedMessageBytes), hex.encode(nonce));
   }
 
   void _sendMessage(String payload, SignMessage message, int round) {
-    var (encryptedPayload, nonce) = _encryptPayload(payload);
+    var (encryptedPayload, nonce) = _encryptPayload(pubKeyToEthAddress(message.publicKey), payload);
     final signMessage2 = SignMessage(
       sessionId: message.sessionId,
       accountId: message.accountId,

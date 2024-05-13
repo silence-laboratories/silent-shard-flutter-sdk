@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart' as ffi_ext;
 import 'package:convert/convert.dart';
+import 'package:hashlib/hashlib.dart';
 
 import '../ctss_bindings_generated.dart';
 
@@ -77,4 +78,11 @@ T getInfoFrom<T>(Handle handle, InfoProvider provider, FreeFunction freeFunction
   ffi_ext.calloc.free(buffer);
 
   return result;
+}
+
+String pubKeyToEthAddress(String publicKey) {
+  Uint8List publicKeyByte = Uint8List.fromList(hex.decode(publicKey));
+  final hash = keccak256.convert(publicKeyByte);
+  final addressBytes = hash.buffer.asUint8List(12, 20);
+  return '0x${hex.encode(addressBytes)}';
 }

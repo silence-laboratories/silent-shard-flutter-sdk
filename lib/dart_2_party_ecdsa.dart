@@ -97,10 +97,10 @@ final class Dart2PartySDK {
   }
 
   void _initState() {
-    switch ((pairingState.pairingData, keygenState.keysharesMap.isEmpty)) {
-      case (_?, false):
+    switch ((pairingState.pairingDataMap.isEmpty, keygenState.keysharesMap.isEmpty)) {
+      case (false, false):
         _state = SdkState.readyToSign;
-      case (_?, true):
+      case (false, true):
         _state = SdkState.paired;
       default:
         _state = SdkState.initialized;
@@ -111,7 +111,7 @@ final class Dart2PartySDK {
     if (_state == SdkState.loaded) throw StateError('Cannot cleanup SDK in $_state state');
     deleteBackup(walletId, address);
     deleteKeyshare(walletId, address);
-    unpairIfNoKeyshares();
+    unpair(address);
   }
 
   // --- Pairing ---
@@ -134,13 +134,13 @@ final class Dart2PartySDK {
         _state = SdkState.initialized;
       },
     ).then((pairingData) {
-      pairingState.pairingData = pairingData;
-      _state = SdkState.paired;
       if (walletBackup != null) {
         try {
           List<Keyshare2> keyshareList = walletBackup.accounts.map((accountBackup) => Keyshare2.fromBytes(ctss, accountBackup.keyshareData)).toList();
+          assert(keyshareList.isNotEmpty, 'Backup doesn\'t contain keyshares');
           keygenState.upsertKeyshares(walletId, keyshareList);
           backupState.upsertBackupAccounts(walletId, walletBackup.accounts);
+          pairingState.setPairingData(keyshareList.first.ethAddress, pairingData);
 
           _state = SdkState.readyToSign;
         } catch (error) {
@@ -148,6 +148,7 @@ final class Dart2PartySDK {
           throw StateError('Error recovering from backup: $error');
         }
       } else {
+        pairingState.setPairingData(null, pairingData);
         _state = SdkState.paired;
       }
       return pairingData;
@@ -162,7 +163,7 @@ final class Dart2PartySDK {
   CancelableOperation<PairingData> startRePairing(QRMessage message, String address, String userId) {
     if (_state != SdkState.readyToSign) CancelableOperation.fromFuture(Future.error(StateError('Cannot start re-pairing SDK in $_state state')));
 
-    final walletBackup = backupState.walletBackupMap[message.walletId];
+    final walletBackup = backupState.walletBackupsMap[message.walletId];
     if (walletBackup == null) {
       return CancelableOperation.fromFuture(Future.error(StateError('NO_BACKUP_DATA_WHILE_REPAIRING')));
     }
@@ -179,40 +180,33 @@ final class Dart2PartySDK {
       onCancel: pairingAction.cancel,
     ).then((pairingData) {
       // TODO: invalidate old sign listener
-      pairingState.pairingData = pairingData;
+      pairingState.setPairingData(address, pairingData);
       return pairingData;
     });
 
     return _pairingOperation!;
   }
 
-  void cancelPairing() {
+  void unpair(String address) {
     _pairingOperation?.cancel();
-  }
-
-  void unpairIfNoKeyshares() {
-    if (_state != SdkState.paired) return cancelPairing();
-    pairingState.pairingData = null;
-    _state = SdkState.initialized;
+    pairingState.removePairingDataBy(address);
   }
 
   // --- Keygen ---
 
   late KeygenState keygenState = KeygenState(localDatabase);
 
-  CancelableOperation<Keyshare2> startKeygen(String walletId, String userId) {
+  CancelableOperation<Keyshare2> startKeygen(String walletId, String userId, PairingData pairingData) {
     if (_state.index < SdkState.paired.index) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start keygen when SDK in $_state state')));
     }
-
-    final pairingData = pairingState.pairingData;
-    if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before key generation')));
 
     final keygenAction = KeygenAction(sodium, ctss, _sharedDatabase, pairingData, userId);
     final keygenOperation = CancelableOperation.fromFuture(keygenAction.start(), onCancel: keygenAction.cancel);
 
     return keygenOperation.then((keyshare) {
       keygenState.addKeyshare(walletId, keyshare);
+      pairingState.setPairingData(keyshare.ethAddress, pairingData);
       _state = SdkState.readyToSign;
       return keyshare;
     });
@@ -221,24 +215,23 @@ final class Dart2PartySDK {
   void deleteKeyshare(String walletId, String address) {
     if (_state != SdkState.readyToSign && _state != SdkState.initialized) return;
     keygenState.removeKeyshareBy(walletId, address);
-    _state = SdkState.paired;
   }
 
   // --- Sign ---
 
   SignListener? _signListener;
 
-  SignListener? _updateSignListener(PairingData? pairingData, Map<String, List<Keyshare2>> keyshares, String userId) {
-    if (pairingData == null || keyshares.isEmpty) {
+  SignListener? _updateSignListener(Map<String, PairingData> pairingDataMap, Map<String, List<Keyshare2>> keyshares, String userId) {
+    if (pairingDataMap.isEmpty || keyshares.isEmpty) {
       _signListener = null;
     } else {
-      _signListener = SignListener(pairingData, userId, keyshares, _sharedDatabase, sodium, ctss);
+      _signListener = SignListener(pairingDataMap, userId, keyshares, _sharedDatabase, sodium, ctss);
     }
     return _signListener;
   }
 
   Stream<SignRequest> signRequests(String userId) {
-    final pairingStream = pairingState.toStream((p) => p.pairingData);
+    final pairingStream = pairingState.toStream((p) => p.pairingDataMap);
     final keysharesStream = keygenState.toStream((p) => p.keysharesMap);
     return pairingStream //
         .combineLatest(
@@ -262,8 +255,10 @@ final class Dart2PartySDK {
     if (_state != SdkState.readyToSign) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
     }
-    final pairingData = pairingState.pairingData;
-    if (pairingData == null) return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
+    if (pairingState.pairingDataMap.containsKey(accountAddress)) {
+      return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
+    }
+
     final keyshare = keygenState.keysharesMap[METAMASK_WALLET_ID]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
     if (keyshare == null) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
@@ -283,9 +278,6 @@ final class Dart2PartySDK {
       throw StateError('Cannot start backup when SDK in $_state state');
     }
 
-    final pairingData = pairingState.pairingData;
-    if (pairingData == null) throw StateError('Must be paired before backup');
-
     if (keygenState.keysharesMap[walletId] == null) {
       throw StateError('No keyshares for $walletId');
     }
@@ -301,14 +293,14 @@ final class Dart2PartySDK {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
         backupState.upsertBackupAccount(walletId, accountBackup);
         _sharedDatabase.setBackupMessage(
-            pairingData.pairingId,
+            userId,
             BackupMessage(
               backupData: '', //
               isBackedUp: remoteBackup.isBackedUp,
             ));
       } else if (remoteBackup.backupData.isEmpty && remoteBackup.isBackedUp) {
         _sharedDatabase.setBackupMessage(
-            pairingData.pairingId,
+            userId,
             BackupMessage(
               backupData: '', //
               isBackedUp: remoteBackup.isBackedUp,
@@ -327,7 +319,7 @@ final class Dart2PartySDK {
 
     final keyshares = keygenState.keysharesMap[walletId];
     if (keyshares == null || keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
-    final walletBackup = backupState.walletBackupMap[walletId];
+    final walletBackup = backupState.walletBackupsMap[walletId];
     if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletId')));
 
     if (walletId == METAMASK_WALLET_ID) {

@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:convert/convert.dart';
+import 'package:dart_2_party_ecdsa/src/utils/utils.dart';
 import 'package:hashlib/hashlib.dart';
 import 'package:sodium/sodium.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -41,21 +42,14 @@ final class SignRequest {
         hashAlg = _originalMessage.hashAlg,
         message = _originalMessage.payload.message,
         walletId = _originalMessage.walletId,
-        from = _ethAddress(_originalMessage.publicKey),
+        from = pubKeyToEthAddress(_originalMessage.publicKey),
         createdAt = _originalMessage.createdAt;
-
-  static String _ethAddress(String publicKey) {
-    Uint8List publicKeyByte = Uint8List.fromList(hex.decode(publicKey));
-    final hash = keccak256.convert(publicKeyByte);
-    final addressBytes = hash.buffer.asUint8List(12, 20);
-    return '0x${hex.encode(addressBytes)}';
-  }
 }
 
 typedef SignRequestApprover = void Function(SignRequest request);
 
 class SignListener {
-  final PairingData _pairingData;
+  final Map<String, PairingData> _pairingData;
   final String _userId;
   final Map<String, List<Keyshare2>> _keyshares;
   final SharedDatabase _sharedDatabase;
@@ -88,8 +82,7 @@ class SignListener {
       final error = StateError('No keyshares for wallet ${request.walletId}');
       return CancelableOperation.fromFuture(Future.error(error));
     }
-    final address = request.from;
-    final keyshare = _keyshares[request.walletId]!.firstWhere((element) => element.ethAddress == address);
+    final keyshare = _keyshares[request.walletId]!.firstWhere((element) => element.ethAddress == request.from);
     final signAction =
         SignAction(_sodium, _ctss, _sharedDatabase, _pairingData, _userId, keyshare, request.messageHash ?? request._originalMessage.messageHash);
 
@@ -117,13 +110,16 @@ class SignListener {
     }
   }
 
-  (Object?, String?) _decryptPayload(SignPayload payload) {
+  (Object?, String?) _decryptPayload(String address, SignPayload payload) {
     try {
+      if (_pairingData[address] == null) {
+        throw (StateError('No pairing data for address $address'), null);
+      }
       final plainText = _sodium.crypto.box.openEasy(
         cipherText: base64.decode(payload.message),
         nonce: Uint8List.fromList(hex.decode(payload.nonce)),
-        publicKey: _pairingData.webPublicKey,
-        secretKey: _pairingData.encKeyPair.secretKey,
+        publicKey: _pairingData[address]!.webPublicKey,
+        secretKey: _pairingData[address]!.encKeyPair.secretKey,
       );
       return (null, utf8.decode(plainText));
     } catch (e) {
@@ -139,7 +135,7 @@ class SignListener {
       return null;
     }
 
-    var (decryptionError, decrypted) = _decryptPayload(message.payload);
+    var (decryptionError, decrypted) = _decryptPayload(pubKeyToEthAddress(message.publicKey), message.payload);
     if (decryptionError != null || decrypted == null) {
       return null;
     }

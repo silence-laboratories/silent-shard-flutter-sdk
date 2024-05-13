@@ -11,10 +11,15 @@ class PairingState extends ChangeNotifier {
 
   PairingState(this._database);
 
-  PairingData? get pairingData => _database.pairingData;
+  Map<String, PairingData> get pairingDataMap => _database.pairingDataMap;
 
-  set pairingData(PairingData? data) {
-    _database.pairingData = data;
+  void setPairingData(String? address, PairingData data) {
+    _database.setPairingData(address, data);
+    notifyListeners();
+  }
+
+  void removePairingDataBy(String address) {
+    _database.removePairingDataBy(address);
     notifyListeners();
   }
 }
