@@ -255,9 +255,6 @@ final class Dart2PartySDK {
     if (_state != SdkState.readyToSign) {
       return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
     }
-    if (pairingState.pairingDataMap.containsKey(accountAddress)) {
-      return CancelableOperation.fromFuture(Future.error(StateError('Must be paired before backup')));
-    }
 
     final keyshare = keygenState.keysharesMap[METAMASK_WALLET_ID]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
     if (keyshare == null) {
