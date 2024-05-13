@@ -129,21 +129,16 @@ class SignListener {
 
   SignMessage? _filter(SignMessage message) {
     if (message.payload.party != 1 || message.payload.round != 1 || message.isApproved != null) return null;
-    print("1st ${message.walletId}");
     if (_keyshares[message.walletId] == null) return null;
-    print("2st ${message.walletId}");
     if (message.accountId > _keyshares[message.walletId]!.length || !_validateMessageDate(message)) {
       _sendDeclineMessage(message);
       return null;
     }
-    print("3rd ${message.walletId}");
 
     var (decryptionError, decrypted) = _decryptPayload(pubKeyToEthAddress(message.publicKey), message.payload);
-    print("decryptionError $decryptionError");
     if (decryptionError != null || decrypted == null) {
       return null;
     }
-    print("4th $message");
 
     message.payload = SignPayload(decrypted, message.payload.nonce, message.payload.round, message.payload.party);
     return message;
