@@ -121,10 +121,6 @@ final class Dart2PartySDK {
   late PairingState pairingState = PairingState(localDatabase);
 
   CancelableOperation<PairingData> startPairing(QRMessage message, String userId, [WalletBackup? walletBackup]) {
-    if (_state != SdkState.initialized && _state != SdkState.readyToSign) {
-      return CancelableOperation.fromFuture(Future.error(StateError('Cannot start pairing SDK in $_state state')));
-    }
-
     final pairingAction = PairingAction(sodium, _sharedDatabase, message, userId);
     final walletId = message.walletId;
     _pairingOperation = CancelableOperation.fromFuture(
