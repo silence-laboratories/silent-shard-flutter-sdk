@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import 'account_backup.dart';
 
-final class WalletBackup {
+class WalletBackup {
   List<AccountBackup> _accounts = [];
 
   WalletBackup([accountsToAdd = const <AccountBackup>[]]) {
@@ -22,11 +22,7 @@ final class WalletBackup {
 
   void addAccounts(Iterable<AccountBackup> backups) => _accounts.addAll(backups);
 
-  void removeAccount(AccountBackup backup) => _accounts.remove(backup);
-
   void removeAccountAt(int index) => _accounts.removeAt(index);
-
-  void clearAccounts() => _accounts.clear();
 
   String get combinedRemoteData => _accounts.map((account) => account.remoteData).join(';');
 

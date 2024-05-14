@@ -38,6 +38,7 @@ export 'src/types/qr_message.dart';
 export 'src/transport/transport.dart';
 export 'src/state/pairing_state.dart';
 export 'src/state/keygen_state.dart';
+export 'src/state/backup_state.dart';
 export 'src/types/pairing_data.dart';
 export 'src/types/keyshare.dart';
 export 'src/types/account_backup.dart';
@@ -282,16 +283,9 @@ final class Dart2PartySDK {
 
     final remoteBackupListener = RemoteBackupListener(_sharedDatabase, userId);
     return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
-      if (remoteBackup.backupData.isNotEmpty && remoteBackup.isBackedUp) {
+      if (remoteBackup.backupData.isNotEmpty) {
         final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
         backupState.upsertBackupAccount(walletId, accountBackup);
-        _sharedDatabase.setBackupMessage(
-            userId,
-            BackupMessage(
-              backupData: '', //
-              isBackedUp: remoteBackup.isBackedUp,
-            ));
-      } else if (remoteBackup.backupData.isEmpty && remoteBackup.isBackedUp) {
         _sharedDatabase.setBackupMessage(
             userId,
             BackupMessage(
