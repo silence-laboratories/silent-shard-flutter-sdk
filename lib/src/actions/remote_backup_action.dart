@@ -28,6 +28,9 @@ class FetchRemoteBackupAction {
   }
 
   void _handleMessage(BackupMessage message) {
+    if (!_validateMessageDate(message)) {
+      return;
+    }
     cancel();
     _sharedDatabase.deleteBackupMessage(_userId);
     _completer.complete(message.backupData);
@@ -35,6 +38,15 @@ class FetchRemoteBackupAction {
 
   void _handleError(Object error) {
     _completer.completeError(error);
+  }
+
+  bool _validateMessageDate(BackupMessage message) {
+    final now = DateTime.now();
+    if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
+      return false;
+    } else {
+      return true;
+    }
   }
 }
 

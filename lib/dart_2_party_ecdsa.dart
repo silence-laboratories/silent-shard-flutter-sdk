@@ -261,38 +261,39 @@ final class Dart2PartySDK {
     final fetchBackupOperation = CancelableOperation.fromFuture(fetchBackupAction.start(), onCancel: fetchBackupAction.cancel);
 
     return fetchBackupOperation.then((remoteBackup) {
-      final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.upsertBackupAccount(METAMASK_WALLET_ID, accountBackup);
+      if (remoteBackup.isNotEmpty) {
+        final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
+        backupState.upsertBackupAccount(METAMASK_WALLET_ID, accountBackup);
+      }
       return remoteBackup;
     });
   }
 
-  Stream<BackupMessage> listenRemoteBackup(String accountAddress, String userId, {String walletId = METAMASK_WALLET_ID}) {
+  Stream<BackupMessage> listenRemoteBackup(String userId) {
     if (_state != SdkState.readyToSign) {
       throw StateError('Cannot start backup when SDK in $_state state');
     }
 
-    if (keygenState.keysharesMap[walletId] == null) {
-      throw StateError('No keyshares for $walletId');
-    }
-
-    final keyshare = keygenState.keysharesMap[walletId]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
-    if (keyshare == null) {
-      throw StateError('Cannot find keyshare for $accountAddress');
-    }
-
     final remoteBackupListener = RemoteBackupListener(_sharedDatabase, userId);
     return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
-      if (remoteBackup.backupData.isNotEmpty) {
-        final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
-        backupState.upsertBackupAccount(walletId, accountBackup);
-        _sharedDatabase.setBackupMessage(
-            userId,
-            BackupMessage(
-              backupData: '', //
-              isBackedUp: remoteBackup.isBackedUp,
-            ));
+      if (remoteBackup.address != null && remoteBackup.walletId != null && remoteBackup.backupData.isNotEmpty) {
+        final accountAddress = remoteBackup.address ?? "";
+        final walletId = remoteBackup.walletId ?? "";
+
+        if (accountAddress.isNotEmpty && walletId.isNotEmpty) {
+          if (keygenState.keysharesMap[walletId] == null) {
+            throw StateError('No keyshares for $walletId');
+          }
+          final keyshare = keygenState.keysharesMap[walletId]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+          if (keyshare == null) {
+            throw StateError('Cannot find keyshare for $accountAddress of $walletId provider');
+          }
+          final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
+          backupState.upsertBackupAccount(walletId, accountBackup);
+        }
       }
+    }).handleError((error) {
+      print('Error listening remote backup: $error');
     });
   }
 
