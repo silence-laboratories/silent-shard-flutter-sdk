@@ -261,8 +261,10 @@ final class Dart2PartySDK {
     final fetchBackupOperation = CancelableOperation.fromFuture(fetchBackupAction.start(), onCancel: fetchBackupAction.cancel);
 
     return fetchBackupOperation.then((remoteBackup) {
-      final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
-      backupState.upsertBackupAccount(METAMASK_WALLET_ID, accountBackup);
+      if (remoteBackup.isNotEmpty) {
+        final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
+        backupState.upsertBackupAccount(METAMASK_WALLET_ID, accountBackup);
+      }
       return remoteBackup;
     });
   }

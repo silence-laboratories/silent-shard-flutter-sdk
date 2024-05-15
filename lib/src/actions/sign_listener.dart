@@ -100,9 +100,6 @@ class SignListener {
 
   bool _validateMessageDate(SignMessage message) {
     final now = DateTime.now();
-    // if (message.createdAt.isAfter(now)) {
-    //   return false;
-    // } else
     if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
       return false;
     } else {
