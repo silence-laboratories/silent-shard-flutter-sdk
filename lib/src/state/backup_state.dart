@@ -33,9 +33,4 @@ class BackupState extends ChangeNotifier {
     _database.removeBackupAccountBy(walletId, address);
     notifyListeners();
   }
-
-  void clearAccounts(String walletId) {
-    _database.removeAllBackups(walletId);
-    notifyListeners();
-  }
 }
