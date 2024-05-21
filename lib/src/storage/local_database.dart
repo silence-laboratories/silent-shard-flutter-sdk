@@ -91,7 +91,6 @@ class LocalDatabase {
       'backup': _walletBackupsMap.map((key, value) => MapEntry(key, value.toJson())),
       'version': currentVersion
     };
-    print('Saving to storage: $json');
     _storage.setString(storageKey, jsonEncode(json));
   }
 
