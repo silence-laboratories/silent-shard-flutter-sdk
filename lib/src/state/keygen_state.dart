@@ -32,9 +32,4 @@ class KeygenState extends ChangeNotifier {
     _database.removeKeyshareBy(walletId, address);
     notifyListeners();
   }
-
-  void removeAllKeyshares(String walletId) {
-    _database.removeAllKeyshares(walletId);
-    notifyListeners();
-  }
 }

@@ -91,7 +91,6 @@ class LocalDatabase {
       'backup': _walletBackupsMap.map((key, value) => MapEntry(key, value.toJson())),
       'version': currentVersion
     };
-    print('Saving to storage: $json');
     _storage.setString(storageKey, jsonEncode(json));
   }
 
@@ -153,16 +152,13 @@ class LocalDatabase {
   void removeKeyshareBy(String walletId, String address) {
     if (_keysharesMap.containsKey(walletId)) {
       final index = _keysharesMap[walletId]!.indexWhere((element) => element.ethAddress == address);
-      _keysharesMap[walletId]!.removeAt(index);
-      if (_keysharesMap[walletId]!.isEmpty) {
-        _keysharesMap.remove(walletId);
+      if (index != -1) {
+        _keysharesMap[walletId]!.removeAt(index);
+        if (_keysharesMap[walletId]!.isEmpty) {
+          _keysharesMap.remove(walletId);
+        }
       }
     }
-    saveToStorage();
-  }
-
-  void removeAllKeyshares(String walletId) {
-    _keysharesMap.remove(walletId);
     saveToStorage();
   }
 
@@ -208,16 +204,13 @@ class LocalDatabase {
   void removeBackupAccountBy(String walletId, String address) {
     if (_walletBackupsMap.containsKey(walletId)) {
       final index = _walletBackupsMap[walletId]!.accounts.indexWhere((element) => element.address == address);
-      _walletBackupsMap[walletId]!.removeAccountAt(index);
-      if (_walletBackupsMap[walletId]!.accounts.isEmpty) {
-        _walletBackupsMap.remove(walletId);
+      if (index != -1) {
+        _walletBackupsMap[walletId]!.removeAccountAt(index);
+        if (_walletBackupsMap[walletId]!.accounts.isEmpty) {
+          _walletBackupsMap.remove(walletId);
+        }
       }
     }
-    saveToStorage();
-  }
-
-  void removeAllBackups(String walletId) {
-    _walletBackupsMap.remove(walletId);
     saveToStorage();
   }
 }
