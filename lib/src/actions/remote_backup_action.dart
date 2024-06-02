@@ -17,11 +17,10 @@ class RemoteBackupListener {
 
   RemoteBackupListener(this._sharedDatabase, this._userId, this._keygenState, this._backupState);
 
-  Stream<BackupMessage> remoteBackupRequests() {
+  Stream<BackupMessage> start() {
     return _sharedDatabase
         .backupUpdates(_userId) //
         .whereNotNull()
-        .timeout(const Duration(seconds: 60))
         .tap(_handleMessage)
         .handleError((error) {
       print('Error listening remote backup: $error');

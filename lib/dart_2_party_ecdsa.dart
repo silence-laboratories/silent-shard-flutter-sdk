@@ -254,7 +254,7 @@ final class Dart2PartySDK {
     }
 
     final remoteBackupListener = RemoteBackupListener(_sharedDatabase, userId, keygenState, backupState);
-    return remoteBackupListener.remoteBackupRequests();
+    return remoteBackupListener.start();
   }
 
   void deleteBackup(String walletId, String address) {
