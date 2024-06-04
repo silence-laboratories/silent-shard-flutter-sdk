@@ -292,10 +292,6 @@ final class Dart2PartySDK {
     final walletBackup = backupState.walletBackupsMap[walletId];
     if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletId')));
 
-    if (walletId == METAMASK_WALLET_ID) {
-      assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
-    }
-
     final backupAccounts = walletBackup.accounts.where((accountBackup) {
       return accountBackup.address == address;
     });
