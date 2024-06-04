@@ -108,7 +108,7 @@ final class Dart2PartySDK {
     }
   }
 
-  void reset(String walletId, String address) {
+  void remove(String walletId, String address) {
     if (_state == SdkState.loaded) throw StateError('Cannot cleanup SDK in $_state state');
     deleteBackup(walletId, address);
     deleteKeyshare(walletId, address);
