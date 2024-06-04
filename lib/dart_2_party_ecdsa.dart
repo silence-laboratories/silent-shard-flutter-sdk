@@ -248,6 +248,27 @@ final class Dart2PartySDK {
 
   late final BackupState backupState = BackupState(localDatabase);
 
+  CancelableOperation<String> fetchRemoteBackup(String accountAddress, String userId) {
+    if (_state != SdkState.readyToSign) {
+      return CancelableOperation.fromFuture(Future.error(StateError('Cannot start backup when SDK in $_state state')));
+    }
+
+    final keyshare = keygenState.keysharesMap[METAMASK_WALLET_ID]?.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+    if (keyshare == null) {
+      return CancelableOperation.fromFuture(Future.error(StateError('Cannot find keyshare for $accountAddress')));
+    }
+    final fetchBackupAction = FetchRemoteBackupAction(_sharedDatabase, userId);
+    final fetchBackupOperation = CancelableOperation.fromFuture(fetchBackupAction.start(), onCancel: fetchBackupAction.cancel);
+
+    return fetchBackupOperation.then((remoteBackup) {
+      if (remoteBackup.isNotEmpty) {
+        final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup);
+        backupState.upsertBackupAccount(METAMASK_WALLET_ID, accountBackup);
+      }
+      return remoteBackup;
+    });
+  }
+
   Stream<BackupMessage> listenRemoteBackup(String userId) {
     if (_state != SdkState.readyToSign) {
       throw StateError('Cannot start backup when SDK in $_state state');
