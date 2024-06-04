@@ -28,6 +28,7 @@ import 'src/storage/local_database.dart';
 import 'src/transport/transport.dart';
 import 'src/transport/shared_database.dart';
 import 'src/actions/remote_backup_action.dart';
+import 'src/actions/remote_backup_listener.dart';
 import 'src/actions/sign_listener.dart';
 import 'src/state/backup_state.dart';
 import 'src/types/user_data.dart';
