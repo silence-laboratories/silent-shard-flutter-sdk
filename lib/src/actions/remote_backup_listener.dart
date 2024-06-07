@@ -28,21 +28,18 @@ class RemoteBackupListener {
   }
 
   void _handleMessage(BackupMessage message) {
-    if (message.address != null && message.walletId != null && message.backupData.isNotEmpty) {
-      final accountAddress = message.address ?? "";
-      final walletId = message.walletId ?? "";
-
-      if (accountAddress.isNotEmpty && walletId.isNotEmpty) {
-        if (_keygenState.keysharesMap[walletId] == null) {
-          throw StateError('No keyshares for $walletId');
-        }
-        final keyshare = _keygenState.keysharesMap[walletId]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
-        if (keyshare == null) {
-          throw StateError('Cannot find keyshare for $accountAddress of $walletId provider');
-        }
-        final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), message.backupData);
-        _backupState.upsertBackupAccount(walletId, accountBackup);
+    final accountAddress = message.address;
+    final walletId = message.walletId;
+    if (accountAddress != null && walletId != null && message.backupData.isNotEmpty) {
+      if (_keygenState.keysharesMap[walletId] == null) {
+        throw StateError('No keyshares for $walletId');
       }
+      final keyshare = _keygenState.keysharesMap[walletId]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
+      if (keyshare == null) {
+        throw StateError('Cannot find keyshare for $accountAddress of $walletId provider');
+      }
+      final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), message.backupData);
+      _backupState.upsertBackupAccount(walletId, accountBackup);
     }
   }
 }
