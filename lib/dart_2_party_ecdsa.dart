@@ -28,6 +28,7 @@ import 'src/storage/local_database.dart';
 import 'src/transport/transport.dart';
 import 'src/transport/shared_database.dart';
 import 'src/actions/remote_backup_action.dart';
+import 'src/actions/remote_backup_listener.dart';
 import 'src/actions/sign_listener.dart';
 import 'src/state/backup_state.dart';
 import 'src/types/user_data.dart';
@@ -108,7 +109,7 @@ final class Dart2PartySDK {
     }
   }
 
-  void reset(String walletId, String address) {
+  void remove(String walletId, String address) {
     if (_state == SdkState.loaded) throw StateError('Cannot cleanup SDK in $_state state');
     deleteBackup(walletId, address);
     deleteKeyshare(walletId, address);
@@ -274,27 +275,8 @@ final class Dart2PartySDK {
       throw StateError('Cannot start backup when SDK in $_state state');
     }
 
-    final remoteBackupListener = RemoteBackupListener(_sharedDatabase, userId);
-    return remoteBackupListener.remoteBackupRequests().tap((remoteBackup) {
-      if (remoteBackup.address != null && remoteBackup.walletId != null && remoteBackup.backupData.isNotEmpty) {
-        final accountAddress = remoteBackup.address ?? "";
-        final walletId = remoteBackup.walletId ?? "";
-
-        if (accountAddress.isNotEmpty && walletId.isNotEmpty) {
-          if (keygenState.keysharesMap[walletId] == null) {
-            throw StateError('No keyshares for $walletId');
-          }
-          final keyshare = keygenState.keysharesMap[walletId]!.firstWhereOrNull((keyshare) => keyshare.ethAddress == accountAddress);
-          if (keyshare == null) {
-            throw StateError('Cannot find keyshare for $accountAddress of $walletId provider');
-          }
-          final accountBackup = AccountBackup(accountAddress, keyshare.toBytes(), remoteBackup.backupData);
-          backupState.upsertBackupAccount(walletId, accountBackup);
-        }
-      }
-    }).handleError((error) {
-      print('Error listening remote backup: $error');
-    });
+    final remoteBackupListener = RemoteBackupListener(_sharedDatabase, userId, keygenState, backupState);
+    return remoteBackupListener.start();
   }
 
   void deleteBackup(String walletId, String address) {
@@ -309,10 +291,6 @@ final class Dart2PartySDK {
     if (keyshares == null || keyshares.isEmpty) return CancelableOperation.fromFuture(Future.error(StateError('No keys to backup')));
     final walletBackup = backupState.walletBackupsMap[walletId];
     if (walletBackup == null) return CancelableOperation.fromFuture(Future.error(StateError('No backup data for $walletId')));
-
-    if (walletId == METAMASK_WALLET_ID) {
-      assert(keyshares.length == walletBackup.accounts.length, 'Part of backup is not fetched');
-    }
 
     final backupAccounts = walletBackup.accounts.where((accountBackup) {
       return accountBackup.address == address;

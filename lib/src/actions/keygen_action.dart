@@ -147,8 +147,12 @@ class KeygenAction {
   }
 
   void _processMessage3(String message3) {
-    final keyshare = _p2KeygenSession!.processMessage3(message3);
-    _completeWithResult(keyshare);
+    try {
+      final keyshare = _p2KeygenSession!.processMessage3(message3);
+      _completeWithResult(keyshare);
+    } catch (e) {
+      _completeWithError(e);
+    }
   }
 
   void _cleanup() {

@@ -3,7 +3,8 @@
 
 import 'dart:async';
 
-import '../transport/messages/backup_message.dart';
+import 'package:dart_2_party_ecdsa/dart_2_party_ecdsa.dart';
+
 import '../transport/shared_database.dart';
 
 class FetchRemoteBackupAction {
@@ -47,16 +48,5 @@ class FetchRemoteBackupAction {
     } else {
       return true;
     }
-  }
-}
-
-class RemoteBackupListener {
-  final SharedDatabase _sharedDatabase;
-  final String _userId;
-
-  RemoteBackupListener(this._sharedDatabase, this._userId);
-
-  Stream<BackupMessage> remoteBackupRequests() {
-    return _sharedDatabase.backupUpdates(_userId);
   }
 }

@@ -61,21 +61,24 @@ class LocalDatabase {
       final pairingDataJson = json['pairingData'];
       if (pairingDataJson != null) {
         pairingDataJson.forEach((key, value) {
-          pairingDataMap[key] = PairingData.fromJson(sodium, value);
+          final PairingData pairingData = PairingData.fromJson(sodium, value);
+          pairingDataMap[key] = pairingData;
         });
       }
 
       final keysharesJson = json['keyshares'];
       if (keysharesJson != null) {
         keysharesJson.forEach((key, value) {
-          keysharesMap[key] = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
+          final List<Keyshare2> keyshares = (value as List).map((e) => Keyshare2.fromBytes(ctss, e)).toList();
+          keysharesMap[key] = keyshares;
         });
       }
 
       final walletBackupJson = json['backup'];
       if (walletBackupJson != null) {
         walletBackupJson.forEach((key, value) {
-          walletBackupsMap[key] = WalletBackup.fromJson(value);
+          final WalletBackup walletBackup = WalletBackup.fromJson(value);
+          walletBackupsMap[key] = walletBackup;
         });
       }
     } catch (e) {
