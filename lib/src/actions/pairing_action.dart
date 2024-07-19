@@ -61,8 +61,6 @@ class PairingAction {
   void _handleResponse(PairingResponse response) {
     if (response.isPaired == null) return;
 
-    _streamSubscription?.cancel();
-
     if (response.isPaired == false) {
       _handleError(StateError(response.pairingRemark ?? 'Something went wrong'));
       return;
@@ -70,10 +68,12 @@ class PairingAction {
 
     final webPublicKey = Uint8List.fromList(hex.decode(_qrMessage.webEncPublicKey));
     final pairingData = PairingData(_qrMessage.pairingId, webPublicKey, keyPair, response.pairingRemark);
+    _streamSubscription?.cancel();
     _completer.complete(pairingData);
   }
 
   void _handleError(Object error) {
+    _streamSubscription?.cancel();
     _completer.completeError(error);
   }
 }
