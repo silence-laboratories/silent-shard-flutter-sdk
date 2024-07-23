@@ -103,9 +103,10 @@ class SignAction {
 
   Error? _validateMessage(SignMessage message) {
     final now = DateTime.now();
-    if (message.createdAt.isAfter(now)) {
-      return StateError('Sign message on round ${message.payload.round} of party ${message.payload.party} has incorrect creation date');
-    } else if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
+    // if (message.createdAt.isAfter(now)) {
+    //   return StateError('Sign message on round ${message.payload.round} of party ${message.payload.party} has incorrect creation date');
+    // } else
+    if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
       return StateError('Sign message on round ${message.payload.round} of party ${message.payload.party} expired');
     } else {
       return null;
