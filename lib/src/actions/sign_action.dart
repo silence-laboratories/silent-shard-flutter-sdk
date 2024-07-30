@@ -29,14 +29,13 @@ class SignAction {
   var _expectedRound = 1;
   final _completer = Completer<String>();
 
-  P2SignSession? _p2SignSession;
+  late P2SignSession _p2SignSession;
   StreamSubscription<SignMessage>? _streamSubscription;
 
   SignAction(this._sodium, this._ctss, this._sharedDatabase, this._pairingData, this._userId, this._keyshare, this.messageHash);
 
   Future<String> start() async {
     _expectedRound = 1;
-    _p2SignSession = null;
 
     _streamSubscription = _sharedDatabase //
         .signUpdates(_userId)
@@ -69,15 +68,14 @@ class SignAction {
       return _completeWithError(validationError);
     }
 
-    var (decryptionError, decrypted) = _decryptPayload(pubKeyToEthAddress(message.publicKey), message.payload);
-    if (decryptionError != null) {
-      return _completeWithError(decryptionError);
-    }
-
-    _p2SignSession ??= P2SignSession(_ctss, message.sessionId, _keyshare, messageHash);
-
     try {
-      _handleRound(message, decrypted!);
+      final address = pubKeyToEthAddress(message.publicKey);
+      final pairingData = _pairingData[address];
+      if (pairingData == null) {
+        throw (StateError('No pairing data for address $address'), null);
+      }
+      final decrypted = decryptPayload(_sodium, pairingData, message.payload);
+      _handleRound(message, decrypted);
       ++_expectedRound;
     } catch (error) {
       _completeWithError(error);
@@ -85,6 +83,7 @@ class SignAction {
   }
 
   void _handleRound(SignMessage message, String decrypted) {
+    _p2SignSession = P2SignSession(_ctss, message.sessionId, _keyshare, messageHash);
     switch (message.payload.round) {
       case 1:
         _processMessage1(message, decrypted);
@@ -103,30 +102,10 @@ class SignAction {
 
   Error? _validateMessage(SignMessage message) {
     final now = DateTime.now();
-    // if (message.createdAt.isAfter(now)) {
-    //   return StateError('Sign message on round ${message.payload.round} of party ${message.payload.party} has incorrect creation date');
-    // } else
     if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
       return StateError('Sign message on round ${message.payload.round} of party ${message.payload.party} expired');
     } else {
       return null;
-    }
-  }
-
-  (Object?, String?) _decryptPayload(String address, SignPayload payload) {
-    try {
-      if (_pairingData[address] == null) {
-        throw (StateError('No pairing data for address $address'), null);
-      }
-      final plainText = _sodium.crypto.box.openEasy(
-        cipherText: base64.decode(payload.message),
-        nonce: Uint8List.fromList(hex.decode(payload.nonce)),
-        publicKey: _pairingData[address]!.webPublicKey,
-        secretKey: _pairingData[address]!.encKeyPair.secretKey,
-      );
-      return (null, utf8.decode(plainText));
-    } catch (e) {
-      return (e, null);
     }
   }
 
@@ -162,17 +141,17 @@ class SignAction {
   }
 
   void _processMessage1(SignMessage message, String payload1) {
-    final message2 = _p2SignSession!.processMessage1(payload1);
+    final message2 = _p2SignSession.processMessage1(payload1);
     _sendMessage(message2, message, 1);
   }
 
   void _processMessage3(SignMessage message, String payload1) {
-    final message4 = _p2SignSession!.processMessage3(payload1);
+    final message4 = _p2SignSession.processMessage3(payload1);
     _sendMessage(message4, message, 2);
   }
 
   void _processMessage5(String message3) {
-    final result = _p2SignSession!.processMessage5(message3);
+    final result = _p2SignSession.processMessage5(message3);
     _completeWithResult(result);
   }
 
@@ -181,4 +160,14 @@ class SignAction {
     // failures over previous locally cached outdated messages
     _sharedDatabase.deleteSignMessage(_userId);
   }
+}
+
+String decryptPayload(Sodium sodium, PairingData pairingData, SignPayload payload) {
+  final plainText = sodium.crypto.box.openEasy(
+    cipherText: base64.decode(payload.message),
+    nonce: Uint8List.fromList(hex.decode(payload.nonce)),
+    publicKey: pairingData.webPublicKey,
+    secretKey: pairingData.encKeyPair.secretKey,
+  );
+  return utf8.decode(plainText);
 }
