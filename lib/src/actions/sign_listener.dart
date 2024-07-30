@@ -98,44 +98,38 @@ class SignListener {
     _sharedDatabase.setSignMessage(_userId, message);
   }
 
-  bool _validateMessageDate(SignMessage message) {
+  void _validateMessageDate(SignMessage message) {
     final now = DateTime.now();
     if (message.createdAt.add(message.expirationTimeout).isBefore(now)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  (Object?, String?) _decryptPayload(String address, SignPayload payload) {
-    try {
-      if (_pairingData[address] == null) {
-        throw (StateError('No pairing data for address $address'), null);
-      }
-      final plainText = _sodium.crypto.box.openEasy(
-        cipherText: base64.decode(payload.message),
-        nonce: Uint8List.fromList(hex.decode(payload.nonce)),
-        publicKey: _pairingData[address]!.webPublicKey,
-        secretKey: _pairingData[address]!.encKeyPair.secretKey,
-      );
-      return (null, utf8.decode(plainText));
-    } catch (e) {
-      return (e, null);
+      throw StateError('Sign message on round ${message.payload.round} of party ${message.payload.party} expired');
     }
   }
 
   SignMessage? _filter(SignMessage message) {
-    if (message.payload.party != 1 || message.payload.round != 1 || message.isApproved != null) return null;
-    if (_keyshares[message.walletId] == null) return null;
-    if (message.accountId > _keyshares[message.walletId]!.length || !_validateMessageDate(message)) {
-      _sendDeclineMessage(message);
-      return null;
+    final address = pubKeyToEthAddress(message.publicKey);
+    final walletInfo = '[${message.walletId ?? 'unknown'}-$address]';
+    if (message.payload.party != 1) {
+      throw StateError('$walletInfo Message is not from party 1, but from ${message.payload.party}');
     }
+    if (message.payload.round != 1) {
+      throw StateError('$walletInfo Message is not in round 1, but round ${message.payload.round}');
+    }
+    if (message.isApproved != null) {
+      throw StateError('$walletInfo Message is already approved or declined');
+    }
+    if (_keyshares[message.walletId] == null) {
+      throw StateError('$walletInfo No keyshares for wallet');
+    }
+    if (message.accountId > _keyshares[message.walletId]!.length) {
+      throw StateError('$walletInfo Account id is greater than the number of keyshares');
+    }
+    _validateMessageDate(message);
 
-    var (decryptionError, decrypted) = _decryptPayload(pubKeyToEthAddress(message.publicKey), message.payload);
-    if (decryptionError != null || decrypted == null) {
-      return null;
+    final pairingData = _pairingData[address];
+    if (pairingData == null) {
+      throw (StateError('$walletInfo No pairing data for address'), null);
     }
+    final decrypted = decryptPayload(_sodium, pairingData, message.payload);
 
     message.payload = SignPayload(decrypted, message.payload.nonce, message.payload.round, message.payload.party);
     return message;
