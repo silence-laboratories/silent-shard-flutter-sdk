@@ -29,13 +29,14 @@ class SignAction {
   var _expectedRound = 1;
   final _completer = Completer<String>();
 
-  late P2SignSession _p2SignSession;
+  P2SignSession? _p2SignSession;
   StreamSubscription<SignMessage>? _streamSubscription;
 
   SignAction(this._sodium, this._ctss, this._sharedDatabase, this._pairingData, this._userId, this._keyshare, this.messageHash);
 
   Future<String> start() async {
     _expectedRound = 1;
+    _p2SignSession = null;
 
     _streamSubscription = _sharedDatabase //
         .signUpdates(_userId)
@@ -75,6 +76,7 @@ class SignAction {
         throw (StateError('No pairing data for address $address'), null);
       }
       final decrypted = decryptPayload(_sodium, pairingData, message.payload);
+      _p2SignSession ??= P2SignSession(_ctss, message.sessionId, _keyshare, messageHash);
       _handleRound(message, decrypted);
       ++_expectedRound;
     } catch (error) {
@@ -83,7 +85,6 @@ class SignAction {
   }
 
   void _handleRound(SignMessage message, String decrypted) {
-    _p2SignSession = P2SignSession(_ctss, message.sessionId, _keyshare, messageHash);
     switch (message.payload.round) {
       case 1:
         _processMessage1(message, decrypted);
@@ -141,17 +142,17 @@ class SignAction {
   }
 
   void _processMessage1(SignMessage message, String payload1) {
-    final message2 = _p2SignSession.processMessage1(payload1);
+    final message2 = _p2SignSession!.processMessage1(payload1);
     _sendMessage(message2, message, 1);
   }
 
   void _processMessage3(SignMessage message, String payload1) {
-    final message4 = _p2SignSession.processMessage3(payload1);
+    final message4 = _p2SignSession!.processMessage3(payload1);
     _sendMessage(message4, message, 2);
   }
 
   void _processMessage5(String message3) {
-    final result = _p2SignSession.processMessage5(message3);
+    final result = _p2SignSession!.processMessage5(message3);
     _completeWithResult(result);
   }
 
