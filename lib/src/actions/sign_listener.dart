@@ -106,16 +106,14 @@ class SignListener {
   }
 
   SignMessage? _filter(SignMessage message) {
+    if (message.payload.round != 1 || message.isApproved != null) {
+      return null;
+    }
     final address = pubKeyToEthAddress(message.publicKey);
     final walletInfo = '[${message.walletId ?? 'unknown'}-$address]';
+
     if (message.payload.party != 1) {
       throw StateError('$walletInfo Message is not from party 1, but from ${message.payload.party}');
-    }
-    if (message.payload.round != 1) {
-      throw StateError('$walletInfo Message is not in round 1, but round ${message.payload.round}');
-    }
-    if (message.isApproved != null) {
-      throw StateError('$walletInfo Message is already approved or declined');
     }
     if (_keyshares[message.walletId] == null) {
       throw StateError('$walletInfo No keyshares for wallet');
