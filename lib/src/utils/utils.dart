@@ -11,7 +11,7 @@ import 'package:hashlib/hashlib.dart';
 
 import '../ctss_bindings_generated.dart';
 
-typedef InfoProvider = int Function(Handle, ffi.Pointer<tss_buffer>);
+typedef InfoProvider = tss_error Function(Handle, ffi.Pointer<tss_buffer>);
 typedef FreeFunction = void Function(ffi.Pointer<tss_buffer>);
 typedef Converter<T> = T Function(ffi.Pointer<tss_buffer>);
 

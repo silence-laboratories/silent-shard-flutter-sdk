@@ -264,7 +264,6 @@ typedef __mpq_struct *mpq_ptr;
   || defined (_STDIO_H_INCLUDED)      /* QNX4 */		\
   || defined (_ISO_STDIO_ISO_H)       /* Sun C++ */		\
   || defined (__STDIO_LOADED)         /* VMS */			\
-  || defined (_STDIO)                 /* HPE NonStop */         \
   || defined (__DEFINED_FILE)         /* musl */
 #define _GMP_H_HAVE_FILE 1
 #endif
@@ -2324,8 +2323,8 @@ enum
 };
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
-#define __GMP_CC "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
-#define __GMP_CFLAGS " -arch arm64 -miphonesimulator-version-min=11.0 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator16.4.sdk"
+#define __GMP_CC "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -mios-simulator-version-min=13.0"
+#define __GMP_CFLAGS "-O2 -fPIC -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -mios-simulator-version-min=13.0"
 
 /* Major version number is the value of __GNU_MP__ too, above. */
 #define __GNU_MP_VERSION            6

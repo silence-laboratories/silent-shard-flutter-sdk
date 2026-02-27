@@ -4,7 +4,7 @@
 import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:ffi/ffi.dart' as ffi_ext;
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dart_2_party_ecdsa/src/ctss_bindings_generated.dart';
 import 'package:dart_2_party_ecdsa/src/utils/utils.dart' as utils;

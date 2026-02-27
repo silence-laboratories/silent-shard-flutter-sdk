@@ -33,4 +33,20 @@ Its built on top of Rust-based ECDSA library which utilizes Multiparty Computati
 
 * `example`: sample app for different platforms running integration tests, showcasing usage and serving as an example.
 
-## Usage examples
+## Development Updates
+
+The binary is built using the following branch: https://github.com/silence-laboratories/rust-2-party-ecdsa/tree/feat/legacy
+
+The binary is a latest commit regarding building scripts. 
+
+Run following scripts 
+```
+sh ci/build-gmp-android.sh
+sh ci/build-gmp-darwin.sh
+sh ci/build-android-ctss.sh
+sh ci/build-darwin.ctss.sh
+```
+
+This will create structured artifacts in the builds directory.
+
+Rust version used is 1.77 during the last build.

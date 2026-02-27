@@ -44,7 +44,7 @@ final class Keyshare2 extends Keyshare {
     handle = ffi_ext.calloc<Handle>(1);
     var bytesBuffer = bytes.toTssBuffer();
 
-    int errCode = _ctss.p2_keyshare_from_bytes(bytesBuffer, handle);
+    tss_error errCode = _ctss.p2_keyshare_from_bytes(bytesBuffer, handle);
     utils.freeTssBuffer(bytesBuffer);
 
     if (errCode != tss_error.TSS_OK) {
