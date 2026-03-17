@@ -14,7 +14,8 @@ A convenience wrapper around corresponding rust sdk (via C bindings).
   s.author           = { 'Your Company' => 'email@example.com' }
 
   s.source           = { :path => '.' }
-  s.vendored_frameworks     = 'Frameworks/ctss.xcframework', 'Frameworks/gmp.xcframework'
+  s.vendored_frameworks     = 'Frameworks/ctss.xcframework'
+  s.vendored_libraries  = 'Libraries/libgmp_ios_*.a'
   s.dependency 'Flutter'
   s.platform = :ios, '13.0'
 
