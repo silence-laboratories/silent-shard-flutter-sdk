@@ -50,3 +50,17 @@ sh ci/build-darwin.ctss.sh
 This will create structured artifacts in the builds directory.
 
 Rust version used is 1.77 during the last build.
+
+## Breaking Changes
+
+### Android
+- **Minimum SDK Version Increased**: The minimum Android SDK version has been increased from 16 to 24
+- **Impact**: Apps running on Android versions below 7.0 (API level 24) will no longer be supported
+- **Affected Devices**: Android 4.1-6.0 devices will not be able to use this SDK
+- **Migration**: Ensure your app's `minSdkVersion` is set to at least 24 in your `build.gradle` file
+
+### iOS
+- **Platform Version Increased**: The minimum iOS platform version has been increased from 11.0 to 13.0
+- **Impact**: Devices running iOS versions below 13.0 will no longer be supported
+- **Affected Devices**: iOS 11.0-12.x devices will not be able to use this SDK
+- **Migration**: Update your `ios/Podfile` and deployment target to at least iOS 13.0
