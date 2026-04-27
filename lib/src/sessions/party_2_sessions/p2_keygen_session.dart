@@ -21,7 +21,7 @@ final class P2KeygenSession {
 
   P2KeygenSession(this._ctss, this.id, [Handle? refreshKeyshare]) {
     id.withTssBuffer((idBuffer) {
-      int errorCode;
+      tss_error errorCode;
       if (refreshKeyshare != null) {
         errorCode = _ctss.p2_ephmeral(idBuffer, refreshKeyshare, session);
       } else {
@@ -41,14 +41,14 @@ final class P2KeygenSession {
       ));
 
   Keyshare2 processMessage3(String message3) {
-    var errorCode = _processMessage3(message3);
+    tss_error errorCode = _processMessage3(message3);
     if (errorCode != tss_error.TSS_OK) {
       throw errorCode;
     }
     return _finalize();
   }
 
-  int _processMessage3(String message3) => message3.withTssBuffer((message3Buffer) => _ctss.p2_keygen_process_msg3(session.ref, message3Buffer));
+  tss_error _processMessage3(String message3) => message3.withTssBuffer((message3Buffer) => _ctss.p2_keygen_process_msg3(session.ref, message3Buffer));
 
   Keyshare2 _finalize() {
     var keyshareHandle = ffi_ext.calloc<Handle>(1);

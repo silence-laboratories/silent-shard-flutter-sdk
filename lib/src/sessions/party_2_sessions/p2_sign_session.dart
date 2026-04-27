@@ -24,7 +24,7 @@ final class P2SignSession {
     id.withTssBuffer((idBuffer) {
       messageHash.withTssBuffer((messageHashBuffer) {
         derivationPath.withTssBuffer((derivationPathBuffer) {
-          int errorCode = _ctss.p2_init_signer(idBuffer, keyshare.handle.ref, messageHashBuffer, /*derivationPathBuffer,*/ session);
+          tss_error errorCode = _ctss.p2_init_signer(idBuffer, keyshare.handle.ref, messageHashBuffer, /*derivationPathBuffer,*/ session);
           if (errorCode != tss_error.TSS_OK) {
             throw errorCode;
           }

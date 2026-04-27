@@ -14,9 +14,10 @@ A convenience wrapper around corresponding rust sdk (via C bindings).
   s.author           = { 'Your Company' => 'email@example.com' }
 
   s.source           = { :path => '.' }
-  s.vendored_frameworks     = 'Frameworks/ctss.xcframework', 'Frameworks/gmp.xcframework'
+  s.vendored_frameworks     = 'Frameworks/ctss.xcframework'
+  s.vendored_libraries  = 'Libraries/libgmp_ios_*.a'
   s.dependency 'Flutter'
-  s.platform = :ios, '11.0'
+  s.platform = :ios, '13.0'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
